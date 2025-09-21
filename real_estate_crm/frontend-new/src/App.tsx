@@ -1,0 +1,65 @@
+import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import type { RootState } from './store/store';
+import BuildingDetailPage from './pages/BuildingDetailPage';
+// Импорт макетов и страниц
+import RootLayout from './layouts/RootLayout';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import ClientsPage from './pages/ClientsPage';
+import ClientDetailPage from './pages/ClientDetailPage';
+import ApplicationsPage from './pages/ApplicationsPage';
+import ApplicationDetailPage from './pages/ApplicationDetailPage';
+import DealsPage from './pages/DealsPage';
+import ProjectsPage from './pages/ProjectsPage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
+import SettingsPage from './pages/SettingsPage';
+
+// Компонент-обертка для защиты маршрутов
+const ProtectedRoute = () => {
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Outlet />;
+};
+
+// Определяем все маршруты приложения
+const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
+    path: '/',
+    element: <RootLayout />,
+    children: [
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: 'clients', element: <ClientsPage /> },
+          { path: 'clients/:clientId', element: <ClientDetailPage /> },
+          { path: 'applications', element: <ApplicationsPage /> },
+          { path: 'applications/:applicationId', element: <ApplicationDetailPage /> },
+          { path: 'deals', element: <DealsPage /> },
+          { path: 'projects', element: <ProjectsPage /> },
+          // ИСПРАВЛЕНИЕ: Этот маршрут должен быть здесь, внутри children
+          { path: 'projects/:projectId', element: <ProjectDetailPage /> },
+          { path: 'projects/:projectId/buildings/:buildingId', element: <BuildingDetailPage /> },
+          { path: 'settings', element: <SettingsPage /> },
+        ],
+      },
+    ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
+  },
+]);
+
+function App() {
+  return <RouterProvider router={router} />;
+}
+
+export default App;

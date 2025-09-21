@@ -5,7 +5,6 @@ from django.db.models import Q
 from .models import Deal
 from apps.realty.models import Property, Discount
 from .serializers import DealCreateSerializer, DealDetailSerializer
-# ИСПРАВЛЕНИЕ: Импортируем DiscountListSerializer
 from apps.realty.serializers import DiscountListSerializer
 
 
@@ -40,22 +39,27 @@ class AvailableDiscountsView(generics.ListAPIView):
     """
     Возвращает список скидок, доступных для объекта в сделке.
     """
-    # ИСПРАВЛЕНИЕ: Используем DiscountListSerializer
     serializer_class = DiscountListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         deal_id = self.kwargs['deal_pk']
         try:
-            deal = Deal.objects.get(pk=deal_id)
+            deal = Deal.objects.select_related('property__building').get(pk=deal_id)
             property_obj = deal.property
             building_obj = property_obj.building
 
+            # --- ИСПРАВЛЕННАЯ ЛОГИКА ФИЛЬТРАЦИИ ---
             return Discount.objects.filter(
-                Q(properties=property_obj) |
+                # Условие 1: Скидка привязана к конкретному дому ИЛИ
+                Q(buildings=building_obj) |
+                # Условие 2: Скидка привязана к типу недвижимости нашего объекта
                 Q(property_type=property_obj.property_type) |
-                Q(buildings=building_obj),
+                # Условие 3: Скидка общая для всех (не привязана ни к дому, ни к типу)
+                Q(buildings__isnull=True, property_type__isnull=True),
                 is_active=True
             ).distinct()
+            # -----------------------------------------
+
         except Deal.DoesNotExist:
             return Discount.objects.none()

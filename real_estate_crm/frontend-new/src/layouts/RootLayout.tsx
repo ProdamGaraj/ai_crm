@@ -1,5 +1,3 @@
-// src/layouts/RootLayout.tsx
-
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar } from '@mui/material';
 import { Link, Outlet } from 'react-router-dom';
 
@@ -9,8 +7,11 @@ import PeopleIcon from '@mui/icons-material/People';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-const drawerWidth = 240; // Ширина бокового меню
 import SettingsIcon from '@mui/icons-material/Settings';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer'; // <-- ДОБАВЬТЕ ЭТОТ ИМПОРТ
+
+const drawerWidth = 240;
+
 const navItems = [
   { text: 'Дашборд', icon: <DashboardIcon />, path: '/' },
   { text: 'Клиенты', icon: <PeopleIcon />, path: '/clients' },
@@ -18,12 +19,13 @@ const navItems = [
   { text: 'Сделки', icon: <BusinessCenterIcon />, path: '/deals' },
   { text: 'Проекты', icon: <AccountBalanceIcon />, path: '/projects' },
   { text: 'Настройки', icon: <SettingsIcon />, path: '/settings' },
+  { text: 'Скидки', icon: <LocalOfferIcon />, path: '/discounts' },
 ];
 
 export default function RootLayout() {
+  // ... остальной код файла без изменений ...
   return (
     <Box sx={{ display: 'flex' }}>
-      {/* Боковое меню */}
       <Drawer
         variant="permanent"
         sx={{
@@ -35,7 +37,7 @@ export default function RootLayout() {
           },
         }}
       >
-        <Toolbar /> {/* Пустой тулбар для отступа сверху */}
+        <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
             {navItems.map((item) => (
@@ -49,11 +51,9 @@ export default function RootLayout() {
           </List>
         </Box>
       </Drawer>
-
-      {/* Основной контент */}
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <Toolbar /> {/* Отступ, чтобы контент не уезжал под шапку (которой пока нет) */}
-        <Outlet /> {/* Сюда React Router будет рендерить наши страницы */}
+        <Toolbar />
+        <Outlet />
       </Box>
     </Box>
   );

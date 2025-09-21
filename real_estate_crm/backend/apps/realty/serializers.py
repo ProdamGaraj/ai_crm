@@ -1,52 +1,131 @@
-# backend/apps/realty/serializers.py
-
 from rest_framework import serializers
-from .models import Project, Building, BuildingType # Добавьте нужные импорты
-from .models import Property
-# Сериализатор для типа дома (для вложенности)
+from .models import (
+    Project, Building, BuildingType, Property, Layout, Discount, DiscountLog,
+    BuildingLog, ProjectImage, BuildingImage
+)
+
+
+# --- "Листовые" сериализаторы (без зависимостей от других сериализаторов в этом файле) ---
+
+class ProjectImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectImage
+        fields = '__all__'
+
+
+class BuildingImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BuildingImage
+        fields = '__all__'
+
+
 class BuildingTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuildingType
         fields = ['id', 'name']
 
-# Сериализатор для дома
+
+class BuildingMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Building
+        fields = ['id', 'name']
+
+
+class LayoutMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Layout
+        fields = ['id', 'name', 'main_layout_image']
+
+
+class LayoutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Layout
+        fields = '__all__'
+
+
+class DiscountLogSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = DiscountLog
+        fields = ['id', 'user', 'action', 'created_at']
+
+
+class BuildingLogSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = BuildingLog
+        fields = ['id', 'user', 'action', 'created_at']
+
+
+# --- Сериализаторы Объектов (Property) ---
+
+class PropertyListSerializer(serializers.ModelSerializer):
+    layout = LayoutMiniSerializer(read_only=True)
+    class Meta:
+        model = Property
+        # Добавляем ID связанной сделки. Если сделки нет, будет null.
+        fields = ['id', 'unit_number', 'property_type', 'status', 'area', 'price', 'floor', 'entrance', 'layout', 'description', 'deal']
+
+
+class PropertyDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Property
+        fields = ['status', 'description']
+
+
+# --- Сериализаторы Скидок (Discount) ---
+
+class DiscountListSerializer(serializers.ModelSerializer):
+    buildings_info = serializers.StringRelatedField(source='buildings', many=True, read_only=True)
+
+    class Meta:
+        model = Discount
+        fields = ['id', 'name', 'percentage_value', 'property_type', 'start_date', 'end_date', 'buildings_info']
+
+
+class DiscountDetailSerializer(serializers.ModelSerializer):
+    buildings_info = serializers.StringRelatedField(source='buildings', many=True, read_only=True)
+    logs = DiscountLogSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Discount
+        fields = '__all__'
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
+
+
+# --- Сериализаторы Проектов (Project) ---
+
+class ProjectListSerializer(serializers.ModelSerializer):
+    buildings = BuildingMiniSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Project
+        fields = ['id', 'name', 'address', 'created_at', 'buildings']
+
+
+# --- "Составные" сериализаторы (зависят от определенных выше) ---
+
 class BuildingSerializer(serializers.ModelSerializer):
     building_type = BuildingTypeSerializer(read_only=True)
-    building_type_id = serializers.IntegerField(write_only=True)
+    building_type_id = serializers.IntegerField(write_only=True, required=False)
+    properties = PropertyListSerializer(many=True, read_only=True)
+    project = ProjectListSerializer(read_only=True)  # Используем краткий сериализатор проекта
+    logs = BuildingLogSerializer(many=True, read_only=True)
 
     class Meta:
         model = Building
         fields = '__all__'
-        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'project']
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
 
-# Сериализатор для списка проектов (краткий)
-class ProjectListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Project
-        fields = ['id', 'name', 'address', 'created_at']
 
-# Сериализатор для детальной карточки проекта (полный, с вложенными домами)
 class ProjectDetailSerializer(serializers.ModelSerializer):
     buildings = BuildingSerializer(many=True, read_only=True)
+    gallery_images = ProjectImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Project
         fields = '__all__'
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
-# Новый сериализатор для списка объектов внутри дома
-class PropertyListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Property
-        fields = ['id', 'unit_number', 'property_type', 'status', 'area', 'price']
-# Обновляем BuildingSerializer, чтобы он стал детальным
-class BuildingSerializer(serializers.ModelSerializer):
-    building_type = BuildingTypeSerializer(read_only=True)
-    building_type_id = serializers.IntegerField(write_only=True)
-    # Добавляем вложенный список объектов
-    properties = PropertyListSerializer(many=True, read_only=True)
-    project = ProjectListSerializer(read_only=True)
 
-    class Meta:
-        model = Building
-        fields = '__all__'
-        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'project']

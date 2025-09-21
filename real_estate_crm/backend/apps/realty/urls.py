@@ -7,6 +7,9 @@ from .views import (
     BuildingTypeListView,
     BuildingTypeDetailView
 )
+from .views import DiscountListView, DiscountDetailView
+from .views import PropertyDetailView
+from .views import LayoutListView, LayoutDetailView
 from .views import PropertyTemplateDownloadView, PropertyUploadView
 urlpatterns = [
     # Projects
@@ -16,11 +19,15 @@ urlpatterns = [
     # Buildings (nested under projects)
     path('projects/<int:project_pk>/buildings/', BuildingCreateView.as_view(), name='building-create'),
     path('projects/<int:project_pk>/buildings/<int:pk>/', BuildingDetailView.as_view(), name='building-detail'),
-
+    path('projects/<int>/buildings/<int:building_pk>/layouts/', LayoutListView.as_view()),
+    path('projects/<int>/buildings/<int:building_pk>/layouts/<int:pk>/', LayoutDetailView.as_view()),
     # Building Types
     path('building-types/', BuildingTypeListView.as_view(), name='building-type-list'),
     path('building-types/<int:pk>/', BuildingTypeDetailView.as_view(), name='building-type-detail'),
-    path('properties/download-template/', PropertyTemplateDownloadView.as_view(), name='property-template-download'),
+    path('projects/<int>/buildings/<int:building_pk>/properties/<int:pk>/', PropertyDetailView.as_view(), name='property-detail'),
+    path('projects/<int:project_pk>/buildings/<int:building_pk>/download-template/', PropertyTemplateDownloadView.as_view(), name='property-template-download'),
+    path('discounts/', DiscountListView.as_view(), name='discount-list'),
+    path('discounts/<int:pk>/', DiscountDetailView.as_view(), name='discount-detail'),
     # Маршрут для загрузки (вложен в проект и дом)
     path('projects/<int:project_pk>/buildings/<int:building_pk>/upload-properties/', PropertyUploadView.as_view(), name='property-upload'),
 ]

@@ -8,13 +8,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
 
-from .models import Project, Building, BuildingType, Property
+from .models import (
+    Project, Building, BuildingType, Property, Layout, Discount, DiscountLog, BuildingLog
+)
 from .serializers import (
     ProjectListSerializer, ProjectDetailSerializer,
-    BuildingSerializer, BuildingTypeSerializer
+    BuildingSerializer, BuildingTypeSerializer,
+    LayoutSerializer, PropertyDetailSerializer,
+    DiscountListSerializer, DiscountDetailSerializer  # Correct serializers are already imported here
 )
 
-# --- Views для Проектов ---
+
+# --- Views for Projects ---
 class ProjectListView(generics.ListCreateAPIView):
     queryset = Project.objects.all()
     permission_classes = [IsAuthenticated]
@@ -27,12 +32,14 @@ class ProjectListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectDetailSerializer
     permission_classes = [IsAuthenticated]
 
-# --- Views для Домов ---
+
+# --- Views for Buildings ---
 class BuildingCreateView(generics.CreateAPIView):
     queryset = Building.objects.all()
     serializer_class = BuildingSerializer
@@ -42,6 +49,7 @@ class BuildingCreateView(generics.CreateAPIView):
         project = Project.objects.get(pk=self.kwargs['project_pk'])
         serializer.save(created_by=self.request.user, project=project)
 
+
 class BuildingDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BuildingSerializer
     permission_classes = [IsAuthenticated]
@@ -49,30 +57,44 @@ class BuildingDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Building.objects.filter(project_id=self.kwargs['project_pk'])
 
-# --- Views для Типов Домов ---
+
+# --- Views for Building Types ---
 class BuildingTypeListView(generics.ListCreateAPIView):
     queryset = BuildingType.objects.all()
     serializer_class = BuildingTypeSerializer
     permission_classes = [IsAuthenticated]
+
 
 class BuildingTypeDetailView(generics.DestroyAPIView):
     queryset = BuildingType.objects.all()
     serializer_class = BuildingTypeSerializer
     permission_classes = [IsAuthenticated]
 
-# --- Views для Excel ---
+
+# --- Views for Excel ---
 class PropertyTemplateDownloadView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, project_pk, building_pk, *args, **kwargs):
         header_map = {
             'unit_number': 'Номер объекта', 'floor': 'Этаж', 'entrance': 'Подъезд',
             'riser': 'Стояк', 'area': 'Площадь (кв.м)', 'price': 'Стоимость',
             'property_type': 'Тип объекта', 'status': 'Статус',
-            'layout_name': 'Название планировки',
+            'layout__name': 'Название планировки',
             'has_finishing': 'Наличие отделки (TRUE/FALSE)', 'description': 'Описание',
         }
-        df = pd.DataFrame(columns=header_map.keys())
+        properties_qs = Property.objects.filter(building_id=building_pk).select_related('layout')
+        properties_data = list(properties_qs.values(*header_map.keys()))
+        if properties_data:
+            df = pd.DataFrame(properties_data)
+        else:
+            df = pd.DataFrame(columns=header_map.keys())
+        type_map_reverse = {k: v for k, v in Property.PropertyType.choices}
+        status_map_reverse = {k: v for k, v in Property.PropertyStatus.choices}
+        if 'property_type' in df.columns:
+            df['property_type'] = df['property_type'].map(type_map_reverse)
+        if 'status' in df.columns:
+            df['status'] = df['status'].map(status_map_reverse)
         df.rename(columns=header_map, inplace=True)
         property_types = [pt[0] for pt in Property.PropertyType.choices]
         statuses = [st[0] for st in Property.PropertyStatus.choices]
@@ -103,61 +125,139 @@ class PropertyUploadView(APIView):
         file_obj = request.FILES.get('file')
         if not file_obj:
             return Response({'error': 'Файл не найден'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             df = pd.read_excel(file_obj)
             building = Building.objects.get(pk=building_pk, project_id=project_pk)
-
-            # --- ИСПРАВЛЕНИЕ: Создаем словари для "перевода" ---
-            # Получаем пары (системное_имя, русское_имя) из модели
-            type_choices = dict(Property.PropertyType.choices)
-            status_choices = dict(Property.PropertyStatus.choices)
-
-            # Инвертируем их, чтобы получить {русское_имя: системное_имя}
-            type_map = {v: k for k, v in type_choices.items()}
-            status_map = {v: k for k, v in status_choices.items()}
-            # Добавляем ваши значения из файла
-            type_map['Квартира'] = 'APARTMENT'
-            status_map['Подбор'] = 'AVAILABLE'  # Пример: "Подбор" соответствует статусу "Доступен"
-
-            properties_to_create = []
+            type_map = {v: k for k, v in Property.PropertyType.choices}
+            status_map = {v: k for k, v in Property.PropertyStatus.choices}
+            allowed_statuses_from_excel = [Property.PropertyStatus.SELECTION, Property.PropertyStatus.RESERVE]
+            created_count = 0
+            updated_count = 0
             for index, row in df.iterrows():
                 if row.isnull().all():
                     continue
-
-                # --- ИСПРАВЛЕНИЕ: "Переводим" значения перед созданием объекта ---
-                property_type_russian = row.get('Тип объекта', 'Квартира')
-                status_russian = row.get('Статус', 'Доступен')
-
-                # Используем .get() с запасным вариантом, чтобы избежать ошибок
-                property_type_system = type_map.get(property_type_russian, 'APARTMENT')
-                status_system = status_map.get(status_russian, 'AVAILABLE')
-
-                properties_to_create.append(
-                    Property(
+                unit_number = row.get('Номер объекта')
+                if not unit_number:
+                    continue
+                layout_name = row.get('Название планировки')
+                layout_obj = None
+                if layout_name and pd.notna(layout_name):
+                    layout_obj, _ = Layout.objects.get_or_create(
                         building=building,
-                        unit_number=row.get('Номер объекта'),
-                        floor=row.get('Этаж'),
-                        entrance=row.get('Подъезд'),
-                        riser=row.get('Стояк'),
-                        area=row.get('Площадь (кв.м)'),
-                        price=row.get('Стоимость'),
-                        # Используем системные значения
-                        property_type=property_type_system,
-                        status=status_system,
-                        layout_name=row.get('Название планировки'),
-                        has_finishing=row.get('Наличие отделки (TRUE/FALSE)', False),
-                        description=row.get('Описание'),
-                        created_by=request.user
+                        name=layout_name
                     )
-                )
-
-            Property.objects.bulk_create(properties_to_create)
-
-            return Response({'status': f'Успешно загружено {len(properties_to_create)} объектов'},
-                            status=status.HTTP_201_CREATED)
-
+                property_data = {
+                    'floor': row.get('Этаж'),
+                    'entrance': row.get('Подъезд'),
+                    'riser': row.get('Стояк'),
+                    'area': row.get('Площадь (кв.м)'),
+                    'price': row.get('Стоимость'),
+                    'has_finishing': row.get('Наличие отделки (TRUE/FALSE)', False),
+                    'description': row.get('Описание'),
+                    'property_type': type_map.get(row.get('Тип объекта'), Property.PropertyType.APARTMENT),
+                    'layout': layout_obj,
+                }
+                status_from_file = status_map.get(row.get('Статус'), Property.PropertyStatus.SELECTION)
+                existing_property = Property.objects.filter(building=building, unit_number=unit_number).first()
+                if existing_property:
+                    for key, value in property_data.items():
+                        if pd.notna(value):
+                            setattr(existing_property, key, value)
+                    if existing_property.status in allowed_statuses_from_excel:
+                        if status_from_file in allowed_statuses_from_excel:
+                            existing_property.status = status_from_file
+                    existing_property.updated_by = request.user
+                    existing_property.save()
+                    updated_count += 1
+                else:
+                    if status_from_file not in allowed_statuses_from_excel:
+                        status_from_file = Property.PropertyStatus.SELECTION
+                    property_data['status'] = status_from_file
+                    Property.objects.create(
+                        building=building,
+                        unit_number=unit_number,
+                        created_by=request.user,
+                        **property_data
+                    )
+                    created_count += 1
+            return Response({'status': f'Успешно загружено. Создано: {created_count}, Обновлено: {updated_count}'},
+                            status=status.HTTP_200_OK)
         except Exception as e:
-            # Возвращаем более информативную ошибку
-            return Response({'error': f"Произошла ошибка при обработке файла: {str(e)}"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f"Произошла ошибка: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# --- Views for Properties ---
+class PropertyDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = PropertyDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Property.objects.filter(building_id=self.kwargs['building_pk'])
+
+
+# --- Views for Layouts ---
+class LayoutListView(generics.ListCreateAPIView):
+    serializer_class = LayoutSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Layout.objects.filter(building_id=self.kwargs['building_pk'])
+
+    def perform_create(self, serializer):
+        building = Building.objects.get(pk=self.kwargs['building_pk'])
+        serializer.save(building=building)
+
+
+class LayoutDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = LayoutSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Layout.objects.filter(building_id=self.kwargs['building_pk'])
+
+
+# --- Views for Discounts ---
+class DiscountListView(generics.ListCreateAPIView):
+    queryset = Discount.objects.prefetch_related('buildings').all()
+    # Используем сериализатор для СПИСКА
+    serializer_class = DiscountListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        instance = serializer.save(created_by=self.request.user)
+        # Создаем лог при создании
+        DiscountLog.objects.create(
+            discount=instance,
+            user=self.request.user,
+            action="Скидка создана."
+        )
+
+
+class DiscountDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Discount.objects.all()
+    # Используем ДЕТАЛЬНЫЙ сериализатор
+    serializer_class = DiscountDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        # --- Логика логирования при обновлении ---
+        old_instance = self.get_object()
+        old_data = self.get_serializer(old_instance).data
+
+        instance = serializer.save(updated_by=self.request.user)
+        new_data = self.get_serializer(instance).data
+
+        changes = []
+        # Сравниваем старые и новые данные
+        for key in old_data:
+            if old_data[key] != new_data[key]:
+                if key not in ['updated_at', 'logs', 'created_at', 'buildings_info']:
+                    changes.append(f"Поле '{key}' изменено с '{old_data[key]}' на '{new_data[key]}'")
+
+        if changes:
+            action_text = "Скидка обновлена. " + "; ".join(changes)
+            DiscountLog.objects.create(
+                discount=instance,
+                user=self.request.user,
+                action=action_text
+            )

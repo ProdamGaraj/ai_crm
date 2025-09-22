@@ -3,17 +3,10 @@ import type { SubmitHandler } from 'react-hook-form';
 import { Box, Button, TextField, Stack, Alert } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { createClient } from '../../api/clients';
-
-// Определяем тип данных, которые отправляем на бэкенд
-export interface ClientPayload {
-  full_name: string;
-  phone_number: string;
-  email?: string;
-  // Добавьте сюда другие поля по мере необходимости
-}
+import type { ClientPayload } from '../../api/clients'; // Используем правильный тип
 
 interface ClientFormProps {
-  onSuccess: () => void; // Функция, которая вызовется при успехе
+  onSuccess: () => void;
 }
 
 export default function ClientForm({ onSuccess }: ClientFormProps) {
@@ -22,7 +15,7 @@ export default function ClientForm({ onSuccess }: ClientFormProps) {
   const mutation = useMutation({
     mutationFn: createClient,
     onSuccess: () => {
-      onSuccess(); // Вызываем колбэк при успехе
+      onSuccess();
     },
   });
 

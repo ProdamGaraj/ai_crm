@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import ApplicationLog, RejectionReason # <-- Импорты
 from .serializers import ApplicationLogSerializer, RejectionReasonSerializer # <-- Импорты
-
+from .filters import ClientFilter
 
 class RejectionReasonListView(generics.ListCreateAPIView):
     serializer_class = RejectionReasonSerializer
@@ -29,6 +29,7 @@ class RejectionReasonListView(generics.ListCreateAPIView):
 class ClientListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
+    filterset_class = ClientFilter
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -63,9 +64,11 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
                 changes.append(f"Поле '{key}' изменено с '{value}' на '{new_value}'")
 
         if changes:
-            action_text = "Заявка обновлена. " + "; ".join(changes)
-            ApplicationLog.objects.create(
-                application=instance,
+            action_text = "Данные клиента обновлены. " + "; ".join(changes)
+            # --- ВОТ ИСПРАВЛЕНИЕ ---
+            # Создаем правильный лог для клиента, а не для заявки.
+            ClientLog.objects.create(
+                client=instance,
                 user=self.request.user,
                 action=action_text
             )

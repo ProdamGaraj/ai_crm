@@ -21,6 +21,19 @@ class PreciseSource(models.Model):
     def __str__(self):
         return self.name
 
+class ClientPhoneNumber(models.Model):
+    client = models.ForeignKey('Client', on_delete=models.CASCADE, related_name='phone_numbers', verbose_name="Клиент")
+    phone_number = models.CharField(max_length=20, verbose_name="Номер телефона")
+    is_primary = models.BooleanField(default=False, verbose_name="Основной")
+
+    class Meta:
+        verbose_name = "Номер телефона клиента"
+        verbose_name_plural = "Номера телефонов клиента"
+        unique_together = ('client', 'phone_number') # Номер должен быть уникальным для клиента
+
+    def __str__(self):
+        return self.phone_number
+
 class RejectionReason(models.Model):
     class ReasonType(models.TextChoices):
         JUNK = 'JUNK', 'Нецелевая'
@@ -126,12 +139,6 @@ class ApplicationLog(models.Model):
         return f"Лог для заявки №{self.application.id} в {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
 
-
-
-
-
-
-
 class Client(models.Model):
     """ Клиент """
 
@@ -145,21 +152,38 @@ class Client(models.Model):
         DIVORCED = 'DIVORCED', 'В разводе'
         WIDOWED = 'WIDOWED', 'Вдовец/Вдова'
 
+    # ДОБАВЛЕНО: Статус клиента
+    class ClientStatus(models.TextChoices):
+        ACTIVE = 'ACTIVE', 'Активный'
+        INACTIVE = 'INACTIVE', 'Неактивный'
+        ARCHIVED = 'ARCHIVED', 'В архиве'
+
     # --- Основная информация ---
     full_name = models.CharField(max_length=255, verbose_name="Полное имя")
-    phone_number = models.CharField(max_length=20, unique=True, verbose_name="Номер телефона")
+    # УДАЛЕНО: phone_number = models.CharField(max_length=20, unique=True, verbose_name="Номер телефона")
     email = models.EmailField(unique=True, blank=True, null=True, verbose_name="Email")
     date_of_birth = models.DateField(blank=True, null=True, verbose_name="Дата рождения")
     gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, verbose_name="Пол")
     marital_status = models.CharField(max_length=10, choices=MaritalStatus.choices, blank=True,
                                       verbose_name="Семейный статус")
+    status = models.CharField(max_length=10, choices=ClientStatus.choices, default=ClientStatus.ACTIVE,
+                              verbose_name="Статус клиента")
 
     # --- Паспортные данные ---
-    passport_series_number = models.CharField(max_length=20, blank=True, verbose_name="Номер и серия паспорта")
+    passport_series = models.CharField(max_length=10, blank=True, verbose_name="Серия паспорта")  # ИЗМЕНЕНО
+    passport_number = models.CharField(max_length=20, blank=True, verbose_name="Номер паспорта")  # ИЗМЕНЕНО
     passport_issued_by = models.CharField(max_length=255, blank=True, verbose_name="Кем выдан паспорт")
     passport_issued_date = models.DateField(blank=True, null=True, verbose_name="Когда выдан паспорт")
+
+    # --- Дополнительные идентификаторы ---
+    inn = models.CharField(max_length=14, blank=True, verbose_name="ИНН")  # ДОБАВЛЕНО
     pinfl = models.CharField(max_length=14, blank=True, verbose_name="ПИНФЛ")
-    registration_address = models.TextField(blank=True, verbose_name="Адрес регистрации")
+
+    # --- Адреса и прочее ---
+    registration_address = models.TextField(blank=True, verbose_name="Адрес прописки")
+    billing_address = models.TextField(blank=True, verbose_name="Расчетный адрес")  # ДОБАВЛЕНО
+    file_storage_link = models.URLField(blank=True, verbose_name="Ссылка на хранилище файлов")  # ДОБАВЛЕНО
+    comment = models.TextField(blank=True, verbose_name="Комментарий")  # ДОБАВЛЕНО
 
     # --- Связи ---
     relatives = models.ManyToManyField('self', blank=True, verbose_name="Родственники")
@@ -181,7 +205,7 @@ class Client(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.full_name} ({self.phone_number})"
+        return self.full_name
 
 
 class ClientLog(models.Model):

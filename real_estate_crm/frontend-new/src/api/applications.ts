@@ -59,8 +59,11 @@ export const deleteApplication = async (id: number): Promise<void> => {
 /**
  * Получает список всех заявок.
  */
-export const getApplications = async (): Promise<Application[]> => {
-  const response = await apiClient.get('/applications/');
+export const getApplications = async (filters: ApplicationFilters = {}): Promise<Application[]> => {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+  );
+  const response = await apiClient.get('/applications/', { params });
   return response.data;
 };
 
@@ -96,3 +99,14 @@ export const updateApplication = async (
   const response = await apiClient.patch(`/applications/${id}/`, payload);
   return response.data;
 };
+/**
+ * Тип для объекта с параметрами фильтрации заявок.
+ */
+export interface ApplicationFilters {
+  status?: string;
+  source?: string;
+  client_id?: number | null;
+  interested_projects?: number | null;
+  created_at_after?: string;
+  created_at_before?: string;
+}

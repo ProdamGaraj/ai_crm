@@ -1,7 +1,8 @@
 from django_filters import rest_framework as filters
 from .models import Client
 from django.contrib.auth.models import User
-
+from .models import Client, Application # Убедитесь, что Application импортирована
+from apps.realty.models import Project
 
 class ClientFilter(filters.FilterSet):
     # Фильтр по имени (по частичному совпадению без учета регистра)
@@ -46,4 +47,38 @@ class ClientFilter(filters.FilterSet):
             'created_at_after',
             'created_at_before',
             'created_by'
+        ]
+# Фильтры для заявок
+class ApplicationFilter(filters.FilterSet):
+    # Фильтр по статусу
+    status = filters.ChoiceFilter(choices=Application.ApplicationStatus.choices)
+
+    # Фильтр по источнику
+    source = filters.ChoiceFilter(choices=Application.ApplicationSource.choices)
+
+    # Фильтр по ID клиента
+    client_id = filters.NumberFilter(field_name='client__id')
+
+    # Фильтр по интересующему проекту (по ID)
+    interested_projects = filters.ModelChoiceFilter(
+        queryset=Project.objects.all(),
+        field_name='interested_projects',
+        to_field_name='id'
+    )
+
+    # Фильтр по дате создания "от"
+    created_at_after = filters.DateFilter(field_name='created_at', lookup_expr='date__gte')
+
+    # Фильтр по дате создания "до"
+    created_at_before = filters.DateFilter(field_name='created_at', lookup_expr='date__lte')
+
+    class Meta:
+        model = Application
+        fields = [
+            'status',
+            'source',
+            'client_id',
+            'interested_projects',
+            'created_at_after',
+            'created_at_before',
         ]

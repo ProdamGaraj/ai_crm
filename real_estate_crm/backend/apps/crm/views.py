@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import ApplicationLog, RejectionReason # <-- Импорты
 from .serializers import ApplicationLogSerializer, RejectionReasonSerializer # <-- Импорты
-from .filters import ClientFilter
+from .filters import ClientFilter, ApplicationFilter
 
 class RejectionReasonListView(generics.ListCreateAPIView):
     serializer_class = RejectionReasonSerializer
@@ -96,6 +96,7 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
 class ApplicationListView(generics.ListCreateAPIView):
     queryset = Application.objects.select_related('client', 'precise_source', 'created_by').all()
     permission_classes = [IsAuthenticated]
+    filterset_class = ApplicationFilter
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

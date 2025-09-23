@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     ProjectListView,
     ProjectDetailView,
-    BuildingCreateView,
+    BuildingListCreateView,
     BuildingDetailView,  # <-- ДОБАВЬТЕ ЭТОТ ИМПОРТ
     BuildingTypeListView,
     BuildingTypeDetailView
@@ -17,7 +17,7 @@ urlpatterns = [
     path('projects/<int:pk>/', ProjectDetailView.as_view(), name='project-detail'),
 
     # Buildings (nested under projects)
-    path('projects/<int:project_pk>/buildings/', BuildingCreateView.as_view(), name='building-create'),
+    path('projects/<int:project_pk>/buildings/',  BuildingListCreateView.as_view(), name='building-create'),
     path('projects/<int:project_pk>/buildings/<int:pk>/', BuildingDetailView.as_view(), name='building-detail'),
     path('projects/<int>/buildings/<int:building_pk>/layouts/', LayoutListView.as_view()),
     path('projects/<int>/buildings/<int:building_pk>/layouts/<int:pk>/', LayoutDetailView.as_view()),

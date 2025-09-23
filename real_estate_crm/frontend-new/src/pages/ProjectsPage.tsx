@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, CircularProgress, Alert, Link as MuiLink } from '@mui/material';
-import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, CircularProgress, Alert, Link as MuiLink, TextField, Stack } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
 import { getProjects } from '../api/projects';
+import type { ProjectFilters } from '../api/projects';
 import ProjectForm from '../components/projects/ProjectForm';
+import { useForm } from 'react-hook-form';
 
 const columns: GridColDef[] = [
   { field: 'id', headerName: 'ID', width: 90 },
@@ -31,25 +33,33 @@ const columns: GridColDef[] = [
 
 export default function ProjectsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filters, setFilters] = useState<ProjectFilters>({});
   const queryClient = useQueryClient();
+  const { register, watch } = useForm<ProjectFilters>();
+
+  useEffect(() => {
+    const subscription = watch((value) => {
+      const timer = setTimeout(() => {
+        setFilters({ search: value.search });
+      }, 500);
+      return () => clearTimeout(timer);
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['projects'],
-    queryFn: getProjects,
+    queryKey: ['projects', filters],
+    queryFn: () => getProjects(filters),
   });
+
 
   const handleSuccess = () => {
     setIsModalOpen(false);
     queryClient.invalidateQueries({ queryKey: ['projects'] });
   };
 
-  if (isLoading) {
-    return <CircularProgress />;
-  }
-
-  if (isError) {
-    return <Alert severity="error">Ошибка загрузки проектов: {error.message}</Alert>;
-  }
+  if (isLoading) return <CircularProgress />;
+  if (isError) return <Alert severity="error">Ошибка загрузки проектов: {(error as Error).message}</Alert>;
 
   return (
     <Box>
@@ -61,7 +71,13 @@ export default function ProjectsPage() {
           Создать проект
         </Button>
       </Box>
-
+      {/* Строка поиска */}
+      <TextField
+            label="Поиск по названию или адресу"
+            fullWidth
+            size="small"
+            {...register('search')}
+      />
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Новый проект</DialogTitle>
         <DialogContent>

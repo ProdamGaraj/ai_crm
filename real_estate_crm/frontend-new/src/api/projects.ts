@@ -13,8 +13,9 @@ export interface ProjectDetail extends Project { buildings: Building[]; /* ... *
 export type ProjectPayload = Omit<Project, 'id' | 'created_at' /* ... */>;
 export interface BuildingType { id: number; name: string; }
 
-export const getProjects = async (): Promise<Project[]> => {
-  return (await apiClient.get('/projects/')).data;
+export const getProjects = async (filters: ProjectFilters = {}): Promise<Project[]> => {
+  const params = new URLSearchParams(filters as any).toString();
+  return (await apiClient.get(`/projects/?${params}`)).data;
 };
 export const getProjectById = async (id: number): Promise<ProjectDetail> => {
   return (await apiClient.get(`/projects/${id}/`)).data;
@@ -33,3 +34,16 @@ export interface BuildingMini {
   id: number;
   name: string;
 }
+// Типы для фильтров
+export interface ProjectFilters {
+  search?: string;
+}
+
+export interface BuildingFilters {
+  search?: string;
+}
+export const getBuildings = async ({ projectId, filters }: { projectId: number; filters: BuildingFilters }): Promise<Building[]> => {
+    const params = new URLSearchParams(filters as any).toString();
+    const response = await apiClient.get(`/projects/${projectId}/buildings/?${params}`);
+    return response.data;
+};

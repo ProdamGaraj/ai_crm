@@ -7,7 +7,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-
+from .filters import ProjectFilter, BuildingFilter
+from .serializers import BuildingSerializer
 from .models import (
     Project, Building, BuildingType, Property, Layout, Discount, DiscountLog, BuildingLog
 )
@@ -23,7 +24,7 @@ from .serializers import (
 class ProjectListView(generics.ListCreateAPIView):
     queryset = Project.objects.all()
     permission_classes = [IsAuthenticated]
-
+    filterset_class = ProjectFilter
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return ProjectDetailSerializer
@@ -40,10 +41,13 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # --- Views for Buildings ---
-class BuildingCreateView(generics.CreateAPIView):
-    queryset = Building.objects.all()
+class BuildingListCreateView(generics.ListCreateAPIView):
     serializer_class = BuildingSerializer
     permission_classes = [IsAuthenticated]
+    filterset_class = BuildingFilter # <--- ДОБАВЛЕНО
+
+    def get_queryset(self):
+        return Building.objects.filter(project_id=self.kwargs['project_pk'])
 
     def perform_create(self, serializer):
         project = Project.objects.get(pk=self.kwargs['project_pk'])

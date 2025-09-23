@@ -1,16 +1,19 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProjectById, createBuilding } from '../api/projects';
-import { Box, Button, CircularProgress, Paper, Tab, Tabs, Typography, Dialog, DialogTitle, DialogContent } from '@mui/material';
+import { getProjectById, createBuilding, getBuildings } from '../api/projects';
+import {
+    Box, Button, CircularProgress, Paper, Tab, Tabs, Typography,
+    Dialog, DialogTitle, DialogContent, TextField, Stack, Link as MuiLink
+} from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import BuildingForm from '../components/buildings/BuildingForm';
 import type { BuildingPayload } from '../components/buildings/BuildingForm';
-import { Link as RouterLink } from 'react-router-dom';
-import { Link as MuiLink } from '@mui/material';
+import { useForm } from 'react-hook-form';
+import type { BuildingFilters, Building } from '../api/projects';
 
-// Вспомогательный компонент для панели вкладок, который вызывал ошибку
+// Вспомогательный компонент для панели вкладок
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -32,17 +35,40 @@ export default function ProjectDetailPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: project, isLoading } = useQuery({
+  const [buildingFilters, setBuildingFilters] = useState<BuildingFilters>({});
+  const { register: registerBuildingFilter, watch: watchBuildingFilter } = useForm<BuildingFilters>();
+
+  // Запрос основной информации о проекте
+  const { data: project, isLoading: isLoadingProject } = useQuery({
     queryKey: ['project', projectId],
     queryFn: () => getProjectById(Number(projectId)),
     enabled: !!projectId,
   });
 
+  // Отдельный запрос для списка домов с фильтрацией
+  const { data: buildings, isLoading: isLoadingBuildings } = useQuery({
+    queryKey: ['buildings', projectId, buildingFilters],
+    queryFn: () => getBuildings({ projectId: Number(projectId), filters: buildingFilters }),
+    enabled: !!projectId,
+  });
+
+  // Отслеживаем ввод в поисковую строку для домов
+  useEffect(() => {
+    const subscription = watchBuildingFilter((value) => {
+      const timer = setTimeout(() => {
+        setBuildingFilters({ search: value.search });
+      }, 500);
+      return () => clearTimeout(timer);
+    });
+    return () => subscription.unsubscribe();
+  }, [watchBuildingFilter]);
+
   const createBuildingMutation = useMutation({
     mutationFn: createBuilding,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      setIsModalOpen(false); // Закрываем окно при успехе
+      queryClient.invalidateQueries({ queryKey: ['buildings', projectId] });
+      setIsModalOpen(false);
     },
   });
 
@@ -51,7 +77,7 @@ export default function ProjectDetailPage() {
     createBuildingMutation.mutate({ projectId: Number(projectId), payload: data });
   };
 
-  if (isLoading || !project) {
+  if (isLoadingProject || !project) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
         <CircularProgress />
@@ -59,7 +85,7 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const buildingColumns: GridColDef[] = [
+  const buildingColumns: GridColDef<Building>[] = [
     { field: 'id', headerName: 'ID', width: 90 },
     {
       field: 'name',
@@ -72,7 +98,6 @@ export default function ProjectDetailPage() {
       )
     },
     { field: 'floors_count', headerName: 'Этажей' },
-    // Добавьте другие колонки для домов по необходимости
   ];
 
   return (
@@ -83,27 +108,33 @@ export default function ProjectDetailPage() {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
         <Tabs value={tabValue} onChange={(_, newVal) => setTabValue(newVal)}>
           <Tab label="Детали проекта" />
-          <Tab label={`Дома (${project.buildings.length})`} />
+          <Tab label={`Дома (${buildings?.length ?? 0})`} />
         </Tabs>
       </Box>
 
       <TabPanel value={tabValue} index={0}>
-        {/* Здесь будет форма для редактирования данных проекта */}
         <Typography>Информация о проекте...</Typography>
       </TabPanel>
 
       <TabPanel value={tabValue} index={1}>
-        <Button sx={{ mb: 2 }} variant="contained" onClick={() => setIsModalOpen(true)}>
-          Добавить дом
-        </Button>
+        <Stack spacing={2} sx={{ mb: 2 }}>
+            <Button variant="contained" onClick={() => setIsModalOpen(true)}>
+                Добавить дом
+            </Button>
+            <TextField
+                label="Поиск по названию дома"
+                fullWidth
+                size="small"
+                {...registerBuildingFilter('search')}
+            />
+        </Stack>
         <Box sx={{ height: 400, width: '100%' }}>
           <DataGrid
-            rows={project.buildings}
+            rows={buildings || []}
             columns={buildingColumns}
+            loading={isLoadingBuildings}
             initialState={{
-              sorting: {
-                sortModel: [{ field: 'id', sort: 'desc' }],
-              },
+              sorting: { sortModel: [{ field: 'id', sort: 'desc' }] },
             }}
             disableRowSelectionOnClick
           />

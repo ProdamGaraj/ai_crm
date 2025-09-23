@@ -48,25 +48,43 @@ class ClientListView(generics.ListCreateAPIView):
 
 class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = Client.objects.all()
+    queryset = Client.objects.prefetch_related('phone_numbers').all() # Добавили prefetch для оптимизации
     serializer_class = ClientDetailSerializer
 
     def perform_update(self, serializer):
         old_instance = self.get_object()
+        # Получаем старые данные ДО сохранения
         old_data = self.get_serializer(old_instance).data
+        # Сохраняем старые номера телефонов в простой список для сравнения
+        old_phones = sorted([p['phone_number'] for p in old_data.get('phone_numbers', [])])
 
+        # Сохраняем новые данные
         instance = serializer.save()
+        # Получаем новые данные ПОСЛЕ сохранения
+        new_data = self.get_serializer(instance).data
+        # Сохраняем новые номера
+        new_phones = sorted([p['phone_number'] for p in new_data.get('phone_numbers', [])])
 
         changes = []
+        # Сравниваем основные поля модели
         for key, value in old_data.items():
-            new_value = self.get_serializer(instance).data.get(key)
-            if value != new_value and key not in ['updated_at', 'logs']:
-                changes.append(f"Поле '{key}' изменено с '{value}' на '{new_value}'")
+            # Пропускаем поля, которые обрабатываем отдельно или не логируем
+            if key not in ['updated_at', 'logs', 'applications', 'phone_numbers']:
+                new_value = new_data.get(key)
+                if value != new_value:
+                    old_value_str = value or "пусто"
+                    new_value_str = new_value or "пусто"
+                    changes.append(f"Поле '{key}' изменено с '{old_value_str}' на '{new_value_str}'")
+
+        # --- НОВАЯ ЛОГИКА ДЛЯ СРАВНЕНИЯ НОМЕРОВ ---
+        if old_phones != new_phones:
+            old_phones_str = ", ".join(old_phones) or "пусто"
+            new_phones_str = ", ".join(new_phones) or "пусто"
+            changes.append(f"Поле 'phone_numbers' изменено с '{old_phones_str}' на '{new_phones_str}'")
+        # --------------------------------------------
 
         if changes:
             action_text = "Данные клиента обновлены. " + "; ".join(changes)
-            # --- ВОТ ИСПРАВЛЕНИЕ ---
-            # Создаем правильный лог для клиента, а не для заявки.
             ClientLog.objects.create(
                 client=instance,
                 user=self.request.user,

@@ -12,7 +12,7 @@ import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot } from '@mui/lab';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-
+import HumanizedLog from '../components/logs/HumanizedLog';
 // Вспомогательный компонент для панели вкладок
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -201,23 +201,24 @@ export default function ClientDetailPage() {
 
       {/* ВКЛАДКА 3: ЛОГИ */}
       <TabPanel value={tabValue} index={2}>
-        <Timeline position="right">
-          {client?.logs.map((log) => (
-            <TimelineItem key={log.id}>
-              <TimelineSeparator>
-                <TimelineDot />
-                <TimelineConnector />
-              </TimelineSeparator>
-              <TimelineContent sx={{ py: '12px', px: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {new Date(log.created_at).toLocaleString()} - {log.user || 'Система'}
-                </Typography>
-                <Typography>{log.action}</Typography>
-              </TimelineContent>
-            </TimelineItem>
-          ))}
-        </Timeline>
-      </TabPanel>
+                <Timeline position="right">
+                    {client?.logs.map((log) => (
+                        <TimelineItem key={log.id}>
+                            <TimelineSeparator>
+                                <TimelineDot />
+                                <TimelineConnector />
+                            </TimelineSeparator>
+                            <TimelineContent sx={{ py: '12px', px: 2 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    {new Date(log.created_at).toLocaleString()} - {log.user || 'Система'}
+                                </Typography>
+                                {/* --- ИСПОЛЬЗУЕМ НОВЫЙ КОМПОНЕНТ --- */}
+                                <HumanizedLog log={log} />
+                            </TimelineContent>
+                        </TimelineItem>
+                    ))}
+                </Timeline>
+            </TabPanel>
     </Paper>
   );
 }

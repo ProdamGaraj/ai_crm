@@ -22,6 +22,10 @@ export interface Deal {
   notes: string;
   applied_discounts: Discount[];
   payments: Payment[];
+  signed_document_scan: string | null; // URL на скан
+  client_signature_date: string | null;
+  company_signature_date: string | null;
+  logs: DealLog[];
 }
 
 /**
@@ -42,6 +46,9 @@ export interface DealUpdatePayload {
     applied_discounts_ids?: number[];
     contract_number?: string;
     contract_date?: string | null;
+    signed_document_scan?: File | null; // Поле для файла
+    client_signature_date?: string | null;
+    company_signature_date?: string | null;
 }
 
 /**
@@ -64,7 +71,30 @@ export const getDealById = async (id: number): Promise<Deal> => {
  * Обновляет сделку по ее ID.
  */
 export const updateDeal = async ({ id, payload }: { id: number; payload: DealUpdatePayload }): Promise<Deal> => {
-    const response = await apiClient.patch(`/deals/${id}/`, payload);
+    const formData = new FormData();
+
+    // Преобразуем объект payload в FormData
+    for (const key in payload) {
+        const value = payload[key as keyof DealUpdatePayload];
+
+        if (value !== undefined && value !== null) {
+            if (key === 'applied_discounts_ids' && Array.isArray(value)) {
+                // Обрабатываем массив ID скидок
+                value.forEach((discountId: number) => formData.append('applied_discounts_ids', String(discountId)));
+            } else if (value instanceof File) {
+                 // Добавляем файл
+                formData.append(key, value);
+            }
+            else {
+                // Добавляем остальные поля
+                formData.append(key, String(value));
+            }
+        }
+    }
+
+    const response = await apiClient.patch(`/deals/${id}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
 };
 
@@ -75,3 +105,9 @@ export const getAvailableDiscounts = async (dealId: number): Promise<Discount[]>
     const response = await apiClient.get(`/deals/${dealId}/available-discounts/`);
     return response.data;
 };
+export interface DealLog {
+  id: number;
+  user: string;
+  action: string;
+  created_at: string;
+}

@@ -74,6 +74,14 @@ class Deal(models.Model):
         verbose_name="Номер договора"
     )
     contract_date = models.DateField(null=True, blank=True, verbose_name="Дата договора")
+    signed_document_scan = models.FileField(
+        upload_to='deals/signed_documents/',
+        null=True,
+        blank=True,
+        verbose_name="Скан подписанного документа"
+    )
+    client_signature_date = models.DateField(null=True, blank=True, verbose_name="Дата подписания клиентом")
+    company_signature_date = models.DateField(null=True, blank=True, verbose_name="Дата подписания компанией")
     # --- Системные поля (Логи) ---
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")

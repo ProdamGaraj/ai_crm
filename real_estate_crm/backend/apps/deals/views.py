@@ -30,7 +30,7 @@ class DealCreateView(generics.CreateAPIView):
 
 
 class DealDetailView(generics.RetrieveUpdateAPIView):
-    queryset = Deal.objects.select_related('client', 'property', 'created_by').prefetch_related('applied_discounts')
+    queryset = Deal.objects.select_related('client', 'property', 'created_by').prefetch_related('applied_discounts', 'logs') # <--- СТАЛО
     serializer_class = DealDetailSerializer
     permission_classes = [IsAuthenticated]
 

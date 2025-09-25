@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Deal
+from .models import Deal, DealLog
 from apps.crm.serializers import ClientListSerializer
 # ИСПРАВЛЕНИЕ: Импортируем DiscountListSerializer
 from apps.realty.serializers import PropertyListSerializer, DiscountListSerializer
@@ -15,7 +15,12 @@ class DealCreateSerializer(serializers.ModelSerializer):
         model = Deal
         fields = ['client', 'property', 'booking_end_date']
 
+class DealLogSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
 
+    class Meta:
+        model = DealLog
+        fields = ['id', 'user', 'action', 'created_at']
 class DealDetailSerializer(serializers.ModelSerializer):
     """
     Сериализатор для детального отображения и обновления сделки.
@@ -27,6 +32,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
     applied_discounts = DiscountListSerializer(many=True, read_only=True)
     created_by = serializers.StringRelatedField(read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
+    logs = DealLogSerializer(many=True, read_only=True)
 
     # Поле только для записи (write-only), чтобы принимать массив ID скидок при обновлении
     applied_discounts_ids = serializers.PrimaryKeyRelatedField(
@@ -42,12 +48,13 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'id', 'status', 'booking_start_date', 'booking_end_date', 'client', 'property',
             'initial_price', 'initial_price_per_sqm', 'contract_price', 'notes',
             'created_by', 'created_at', 'applied_discounts', 'applied_discounts_ids',
-            'payments', 'contract_date'
+            'payments', 'contract_number', 'contract_date',
+            # --- ДОБАВЬТЕ ЭТИ ПОЛЯ ---
+            'signed_document_scan', 'client_signature_date', 'company_signature_date','logs'
         ]
-        # Поля, которые нельзя изменять напрямую через этот сериализатор
         read_only_fields = [
             'id', 'status', 'booking_start_date', 'client', 'property',
-            'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments'
+            'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments','logs'
         ]
 
     def validate_contract_number(self, value):

@@ -42,11 +42,23 @@ class DealTemplatesListView(generics.ListAPIView):
         building = prop.building
         project = building.project
 
-        return Template.objects.filter(
+        # Сначала фильтруем по полям, которые поддерживаются базой данных
+        queryset = Template.objects.filter(
             Q(applies_to_projects__isnull=True) | Q(applies_to_projects=project),
             Q(applies_to_buildings__isnull=True) | Q(applies_to_buildings=building),
-            Q(applies_to_property_types__exact='[]') | Q(applies_to_property_types__contains=prop.property_type)
         ).distinct()
+
+        # Затем фильтруем по JSON-полю уже в Python
+        prop_type = prop.property_type
+        filtered_pks = []
+        for template in queryset:
+            applies_to_types = template.applies_to_property_types
+            # Шаблон подходит, если список типов пуст (подходит для всех)
+            # или если тип недвижимости сделки есть в списке
+            if not applies_to_types or prop_type in applies_to_types:
+                filtered_pks.append(template.pk)
+
+        return Template.objects.filter(pk__in=filtered_pks)
 
 
 class GenerateDocumentView(APIView):

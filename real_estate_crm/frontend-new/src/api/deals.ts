@@ -2,6 +2,7 @@ import apiClient from './axios';
 import type { Discount } from './discounts';
 import type { Client } from './clients';
 import type { Property } from './buildings';
+import type { Payment } from './finances';
 
 /**
  * Расширенный тип для сделки, включающий вложенные объекты.
@@ -20,6 +21,7 @@ export interface Deal {
   contract_price: string | null;
   notes: string;
   applied_discounts: Discount[];
+  payments: Payment[];
 }
 
 /**
@@ -38,6 +40,8 @@ export interface DealUpdatePayload {
     notes?: string;
     contract_price?: number;
     applied_discounts_ids?: number[];
+    contract_number?: string;
+    contract_date?: string | null;
 }
 
 /**

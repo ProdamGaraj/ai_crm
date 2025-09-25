@@ -1,30 +1,32 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getBuildingById, uploadProperties, getPropertyTemplateUrl } from '../api/buildings';
-import type { Property } from '../api/buildings';
-import apiClient from '../api/axios';
+import { useForm, Controller } from 'react-hook-form';
 import {
-  Box,
-  CircularProgress,
-  Paper,
-  Typography,
-  ToggleButtonGroup,
-  ToggleButton,
-  Alert,
-  Link as MuiLink,
-  Stack,
-  Button,
-  Tabs,
-  Tab
+  getBuildingById, uploadProperties, getPropertyTemplateUrl, updateBuilding,
+  uploadBuildingImage, deleteBuildingImage
+} from '../api/buildings';
+import type { Property, BuildingUpdatePayload, BuildingDetail } from '../api/buildings';
+import { getBuildingTypes } from '../api/projects';
+import type { BuildingType } from '../api/projects';
+import apiClient from '../api/axios';
+
+import {
+  Box, CircularProgress, Paper, Typography, ToggleButtonGroup, ToggleButton, Alert, Link as MuiLink,
+  Stack, Button, Tabs, Tab, Grid, TextField, FormControl, InputLabel, Select, MenuItem,
+  Card, CardMedia, CardActions, IconButton
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
-import type { GridColDef } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot } from '@mui/lab';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import DeleteIcon from '@mui/icons-material/Delete';
+
 import Chessboard from '../components/buildings/Chessboard';
 import LayoutsTab from '../components/buildings/LayoutsTab';
 import PropertyDetailModal from '../components/buildings/PropertyDetailModal';
+import HumanizedLog from '../components/logs/HumanizedLog';
 
 // Вспомогательный компонент для панели вкладок
 interface TabPanelProps {
@@ -32,7 +34,6 @@ interface TabPanelProps {
   index: number;
   value: number;
 }
-
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
   return (
@@ -44,12 +45,13 @@ function TabPanel(props: TabPanelProps) {
 
 export default function BuildingDetailPage() {
   const { projectId, buildingId } = useParams<{ projectId: string; buildingId: string }>();
-  const [tabValue, setTabValue] = useState(1); // Начинаем со вкладки "Объекты"
+  const [tabValue, setTabValue] = useState(0);
   const [viewMode, setViewMode] = useState<'table' | 'chessboard'>('table');
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const { data: building, isLoading, isError } = useQuery({
     queryKey: ['building', buildingId],
@@ -57,24 +59,67 @@ export default function BuildingDetailPage() {
     enabled: !!projectId && !!buildingId,
   });
 
+  const { data: buildingTypes } = useQuery<BuildingType[]>({
+    queryKey: ['buildingTypes'],
+    queryFn: getBuildingTypes,
+  });
+
+  const { register, handleSubmit, control, reset } = useForm<BuildingUpdatePayload>();
+
+  useEffect(() => {
+    if (building) {
+      reset({
+        ...building,
+        building_type_id: building.building_type?.id,
+      });
+    }
+  }, [building, reset]);
+
+  const updateMutation = useMutation({
+    mutationFn: (data: BuildingUpdatePayload) => updateBuilding({ projectId: Number(projectId), buildingId: Number(buildingId), payload: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['building', buildingId] });
+      alert('Данные дома обновлены');
+    },
+  });
+
   const uploadMutation = useMutation({
-    mutationFn: uploadProperties,
+    mutationFn: (file: File) => uploadProperties({ projectId: Number(projectId), buildingId: Number(buildingId), file }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['building', buildingId] });
-      alert(data.status); // Временное уведомление
+      alert(data.status);
     },
     onError: (error) => {
-      alert(`Ошибка загрузки: ${error.message}`); // Временное уведомление
+      alert(`Ошибка загрузки: ${error.message}`);
     }
   });
 
+  const uploadImageMutation = useMutation({
+    mutationFn: (formData: FormData) => uploadBuildingImage({ projectId: Number(projectId), buildingId: Number(buildingId), formData }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['building', buildingId] });
+    },
+  });
+
+  const deleteImageMutation = useMutation({
+    mutationFn: (imageId: number) => deleteBuildingImage({ projectId: Number(projectId), buildingId: Number(buildingId), imageId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['building', buildingId] });
+    },
+  });
+
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && projectId && buildingId) {
-      uploadMutation.mutate({ projectId: Number(projectId), buildingId: Number(buildingId), file });
-    }
-    if (event.target) {
-      event.target.value = '';
+    if (file) uploadMutation.mutate(file);
+    if (event.target) event.target.value = '';
+  };
+
+  const handleGalleryFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files?.[0]) {
+      const formData = new FormData();
+      formData.append('image', event.target.files[0]);
+      uploadImageMutation.mutate(formData);
     }
   };
 
@@ -82,9 +127,7 @@ export default function BuildingDetailPage() {
     if (!projectId || !buildingId) return;
     try {
       const url = getPropertyTemplateUrl(Number(projectId), Number(buildingId));
-      const response = await apiClient.get(url, {
-        responseType: 'blob',
-      });
+      const response = await apiClient.get(url, { responseType: 'blob' });
       const downloadUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -112,21 +155,12 @@ export default function BuildingDetailPage() {
 
   const filteredProperties = useMemo(() => {
     if (!building?.properties) return [];
-    if (!selectedType) return [];
+    if (!selectedType) return building.properties;
     return building.properties.filter(p => p.property_type === selectedType);
   }, [building, selectedType]);
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (isError || !building) {
-    return <Alert severity="error">Не удалось загрузить данные о доме.</Alert>;
-  }
+  if (isLoading) return <CircularProgress />;
+  if (isError || !building) return <Alert severity="error">Не удалось загрузить данные о доме.</Alert>;
 
   const propertyColumns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 90 },
@@ -146,15 +180,51 @@ export default function BuildingDetailPage() {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
         <Tabs value={tabValue} onChange={(_, newVal) => setTabValue(newVal)}>
           <Tab label="Детали дома" />
-          <Tab label={`Объекты (${building.properties.length})`} />
+          <Tab label={`Объекты (${building?.properties?.length ?? 0})`} />
           <Tab label="Планировки" />
+          <Tab label={`Галерея (${building?.gallery_images?.length ?? 0})`} />
+          <Tab label={`Логи (${building?.logs?.length ?? 0})`} />
         </Tabs>
       </Box>
 
+      {/* ВКЛАДКА "ДЕТАЛИ ДОМА" */}
       <TabPanel value={tabValue} index={0}>
-        <Typography>Здесь будет форма для редактирования деталей дома (высота потолков, материал и т.д.)...</Typography>
+        <form onSubmit={handleSubmit((data) => updateMutation.mutate(data))}>
+          <Stack spacing={3}>
+            <Grid container spacing={2}>
+                <Grid item xs={12} md={4}><TextField fullWidth label="Название/Номер" {...register('name')} /></Grid>
+                <Grid item xs={12} md={4}>
+                    <Controller name="status" control={control} defaultValue={building.status || ''} render={({ field }) => (
+                        <FormControl fullWidth><InputLabel>Статус</InputLabel>
+                        <Select {...field} label="Статус">
+                            <MenuItem value="UNDER_REVIEW">На проверке</MenuItem>
+                            <MenuItem value="FOR_SALE">В продаже</MenuItem>
+                            <MenuItem value="COMPLETED">Сдан</MenuItem>
+                            <MenuItem value="ARCHIVED">В архиве</MenuItem>
+                        </Select></FormControl>
+                    )}/>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                    <Controller name="building_type_id" control={control} defaultValue={building.building_type?.id || ''} render={({ field }) => (
+                        <FormControl fullWidth><InputLabel>Тип дома</InputLabel>
+                        <Select {...field} label="Тип дома">
+                            {buildingTypes?.map(bt => <MenuItem key={bt.id} value={bt.id}>{bt.name}</MenuItem>)}
+                        </Select></FormControl>
+                    )}/>
+                </Grid>
+                <Grid item xs={12} md={4}><TextField fullWidth label="Кол-во этажей" type="number" {...register('floors_count')} /></Grid>
+                <Grid item xs={12} md={4}><TextField fullWidth label="Высота потолков (м)" {...register('ceiling_height')} /></Grid>
+                <Grid item xs={12} md={4}><TextField fullWidth label="Материал" {...register('material')} /></Grid>
+                <Grid item xs={12} md={6}><TextField fullWidth label="УТП 1" {...register('usp_1')} /></Grid>
+                <Grid item xs={12} md={6}><TextField fullWidth label="УТП 2" {...register('usp_2')} /></Grid>
+                <Grid item xs={12} md={6}><TextField label="Дата старта продаж" type="date" InputLabelProps={{ shrink: true }} {...register('sales_start_date')} /></Grid>
+            </Grid>
+            <Box><Button type="submit" variant="contained" disabled={updateMutation.isPending}>Сохранить</Button></Box>
+          </Stack>
+        </form>
       </TabPanel>
 
+      {/* ВКЛАДКА "ОБЪЕКТЫ" */}
       <TabPanel value={tabValue} index={1}>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
@@ -177,11 +247,10 @@ export default function BuildingDetailPage() {
             </ToggleButtonGroup>
           </Stack>
           <Stack direction="row" spacing={2}>
-            <Button variant="contained">Добавить объект вручную</Button>
             <Button variant="outlined" onClick={handleDownload}>
               Скачать шаблон
             </Button>
-            <Button variant="outlined" onClick={() => fileInputRef.current?.click()} disabled={uploadMutation.isPending}>
+            <Button variant="contained" onClick={() => fileInputRef.current?.click()} disabled={uploadMutation.isPending}>
               {uploadMutation.isPending ? 'Загрузка...' : 'Загрузить Excel'}
             </Button>
           </Stack>
@@ -207,9 +276,52 @@ export default function BuildingDetailPage() {
         </Box>
       </TabPanel>
 
+      {/* ВКЛАДКА "ПЛАНИРОВКИ" */}
       <TabPanel value={tabValue} index={2}>
         <LayoutsTab buildingId={Number(buildingId)} />
       </TabPanel>
+
+      {/* ВКЛАДКА "ГАЛЕРЕЯ" */}
+      <TabPanel value={tabValue} index={3}>
+        <Button variant="contained" component="label" startIcon={<PhotoCamera />} sx={{ mb: 2 }}>
+            Загрузить фото
+            <input type="file" hidden accept="image/*" ref={galleryInputRef} onChange={handleGalleryFileChange} />
+        </Button>
+        <Grid container spacing={2}>
+            {building?.gallery_images?.map((image) => (
+                <Grid item key={image.id} xs={12} sm={6} md={4} lg={3}>
+                    <Card>
+                        <CardMedia component="img" height="160" image={image.image} alt={image.caption} />
+                        <CardActions>
+                            <IconButton onClick={() => deleteImageMutation.mutate(image.id)} disabled={deleteImageMutation.isPending} size="small">
+                                <DeleteIcon />
+                            </IconButton>
+                        </CardActions>
+                    </Card>
+                </Grid>
+            ))}
+        </Grid>
+      </TabPanel>
+
+      {/* ВКЛАДКА "ЛОГИ" */}
+       <TabPanel value={tabValue} index={4}>
+            <Timeline>
+                {building?.logs?.map((log) => (
+                    <TimelineItem key={log.id}>
+                        <TimelineSeparator>
+                            <TimelineDot />
+                            <TimelineConnector />
+                        </TimelineSeparator>
+                        <TimelineContent sx={{ py: '12px', px: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                {new Date(log.created_at).toLocaleString()} - {log.user || 'Система'}
+                            </Typography>
+                            <HumanizedLog log={log} />
+                        </TimelineContent>
+                    </TimelineItem>
+                ))}
+            </Timeline>
+        </TabPanel>
 
       <PropertyDetailModal
         property={selectedProperty}

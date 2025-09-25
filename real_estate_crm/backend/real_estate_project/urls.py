@@ -13,8 +13,10 @@ urlpatterns = [
     # Подключаем URL-адреса из наших приложений
     path('api/', include('apps.crm.urls')),
     path('api/', include('apps.realty.urls')),
-    path('api/', include('apps.deals.urls')),  # <-- ДОБАВЬТЕ ЭТУ СТРОКУ
-    # path('api/', include('apps.finances.urls')), # <-- Раскомментируйте, когда добавите urls.py для финансов
+    path('api/', include('apps.deals.urls')),
+    path('api/', include('apps.finances.urls')),
+    path('api/', include('apps.documents.urls')),
+
 
     # Эндпоинты для JWT токенов
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

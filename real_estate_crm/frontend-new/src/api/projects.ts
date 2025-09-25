@@ -9,7 +9,16 @@ export interface Project {
   created_at: string;
   buildings: BuildingMini[]; // <-- Добавляем это поле
 }
-export interface ProjectDetail extends Project { buildings: Building[]; /* ... */ }
+export interface ProjectDetail extends Project {
+    description: string;
+    logo: string | null;
+    usp_1: string;
+    usp_2: string;
+    usp_3: string;
+    developer_details: string;
+    gallery_images: ProjectImage[];
+}
+export type ProjectUpdatePayload = Partial<Omit<ProjectDetail, 'id' | 'created_at' | 'buildings' | 'gallery_images'>>;
 export type ProjectPayload = Omit<Project, 'id' | 'created_at' /* ... */>;
 export interface BuildingType { id: number; name: string; }
 
@@ -46,4 +55,22 @@ export const getBuildings = async ({ projectId, filters }: { projectId: number; 
     const params = new URLSearchParams(filters as any).toString();
     const response = await apiClient.get(`/projects/${projectId}/buildings/?${params}`);
     return response.data;
+};
+export interface ProjectImage {
+  id: number;
+  image: string;
+  caption: string;
+}
+export const updateProject = async ({ id, payload }: { id: number; payload: ProjectUpdatePayload }): Promise<ProjectDetail> => {
+  const response = await apiClient.patch(`/projects/${id}/`, payload);
+  return response.data;
+};
+export const uploadProjectImage = async ({ projectId, formData }: { projectId: number; formData: FormData }): Promise<ProjectImage> => {
+  const response = await apiClient.post(`/projects/${projectId}/gallery/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+export const deleteProjectImage = async ({ projectId, imageId }: { projectId: number; imageId: number }): Promise<void> => {
+  await apiClient.delete(`/projects/${projectId}/gallery/${imageId}/`);
 };

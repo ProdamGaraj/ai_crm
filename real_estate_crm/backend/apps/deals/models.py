@@ -65,7 +65,15 @@ class Deal(models.Model):
     contract_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
                                          verbose_name="Стоимость по договору")
     notes = models.TextField(blank=True, verbose_name="Примечание к сделке")
-
+    # --- Поля для документов ---
+    contract_number = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,  # <--- РАЗРЕШАЕМ NULL В БАЗЕ
+        unique=True,  # <--- ДОБАВЛЯЕМ УНИКАЛЬНОСТЬ
+        verbose_name="Номер договора"
+    )
+    contract_date = models.DateField(null=True, blank=True, verbose_name="Дата договора")
     # --- Системные поля (Логи) ---
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")

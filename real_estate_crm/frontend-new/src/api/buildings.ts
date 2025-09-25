@@ -36,15 +36,22 @@ export interface ProjectMini {
   name: string;
 }
 
-/**
- * Полный интерфейс для детальной карточки дома.
- */
+// Полный интерфейс для детальной карточки дома, включая все поля
 export interface BuildingDetail {
   id: number;
   name: string;
-  project: ProjectMini; // Вложенный объект проекта
-  properties: Property[]; // Массив объектов в этом доме
-  // Добавьте сюда другие поля из BuildingSerializer по мере необходимости
+  project: ProjectMini;
+  properties: Property[];
+  building_type: { id: number; name: string; } | null;
+  status: string;
+  floors_count: number;
+  ceiling_height: number | null;
+  material: string;
+  usp_1: string;
+  usp_2: string;
+  sales_start_date: string | null;
+  gallery_images: BuildingImage[];
+  logs: any[]; // Можно создать более строгий тип для логов
 }
 
 /**
@@ -90,4 +97,29 @@ export const uploadProperties = async ({ projectId, buildingId, file }: { projec
 export const getPropertyTemplateUrl = (projectId: number, buildingId: number): string => {
   return `${apiClient.defaults.baseURL}/projects/${projectId}/buildings/${buildingId}/download-template/`;
 };
+// Интерфейс для изображения в галерее дома
+export interface BuildingImage {
+  id: number;
+  image: string;
+  caption: string;
+}
+// Тип для данных при обновлении дома
+export type BuildingUpdatePayload = Partial<Omit<BuildingDetail, 'id' | 'project' | 'properties' | 'gallery_images' | 'logs'>>;
+// Функция для обновления данных дома
+export const updateBuilding = async ({ projectId, buildingId, payload }: { projectId: number; buildingId: number; payload: BuildingUpdatePayload }): Promise<BuildingDetail> => {
+  const response = await apiClient.patch(`/projects/${projectId}/buildings/${buildingId}/`, payload);
+  return response.data;
+};
 
+// Функция для загрузки изображения в галерею дома
+export const uploadBuildingImage = async ({ projectId, buildingId, formData }: { projectId: number; buildingId: number; formData: FormData }): Promise<BuildingImage> => {
+  const response = await apiClient.post(`/projects/${projectId}/buildings/${buildingId}/gallery/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+// Функция для удаления изображения из галереи дома
+export const deleteBuildingImage = async ({ projectId, buildingId, imageId }: { projectId: number; buildingId: number; imageId: number }): Promise<void> => {
+  await apiClient.delete(`/projects/${projectId}/buildings/${buildingId}/gallery/${imageId}/`);
+};

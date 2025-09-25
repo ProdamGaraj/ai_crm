@@ -10,7 +10,8 @@ from .views import (
 from .views import DiscountListView, DiscountDetailView
 from .views import PropertyDetailView
 from .views import LayoutListView, LayoutDetailView
-from .views import PropertyTemplateDownloadView, PropertyUploadView
+from .views import PropertyTemplateDownloadView, PropertyUploadView, ProjectImageCreateView,ProjectImageDetailView,BuildingImageCreateView,BuildingImageDetailView
+
 urlpatterns = [
     # Projects
     path('projects/', ProjectListView.as_view(), name='project-list'),
@@ -28,6 +29,11 @@ urlpatterns = [
     path('projects/<int:project_pk>/buildings/<int:building_pk>/download-template/', PropertyTemplateDownloadView.as_view(), name='property-template-download'),
     path('discounts/', DiscountListView.as_view(), name='discount-list'),
     path('discounts/<int:pk>/', DiscountDetailView.as_view(), name='discount-detail'),
+    path('projects/<int:project_pk>/buildings/<int:building_pk>/gallery/', BuildingImageCreateView.as_view(), name='building-image-create'),
+    path('projects/<int:project_pk>/buildings/<int:building_pk>/gallery/<int:pk>/', BuildingImageDetailView.as_view(), name='building-image-delete'),
     # Маршрут для загрузки (вложен в проект и дом)
     path('projects/<int:project_pk>/buildings/<int:building_pk>/upload-properties/', PropertyUploadView.as_view(), name='property-upload'),
+    # Project Gallery
+    path('projects/<int:project_pk>/gallery/', ProjectImageCreateView.as_view(), name='project-image-create'),
+    path('projects/<int:project_pk>/gallery/<int:pk>/', ProjectImageDetailView.as_view(), name='project-image-delete'),
 ]

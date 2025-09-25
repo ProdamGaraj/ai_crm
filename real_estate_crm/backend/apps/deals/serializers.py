@@ -3,7 +3,7 @@ from .models import Deal
 from apps.crm.serializers import ClientListSerializer
 # ИСПРАВЛЕНИЕ: Импортируем DiscountListSerializer
 from apps.realty.serializers import PropertyListSerializer, DiscountListSerializer
-
+from apps.finances.serializers import PaymentSerializer
 
 class DealCreateSerializer(serializers.ModelSerializer):
     """
@@ -26,6 +26,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
     # Используем DiscountListSerializer для отображения краткой информации о скидках
     applied_discounts = DiscountListSerializer(many=True, read_only=True)
     created_by = serializers.StringRelatedField(read_only=True)
+    payments = PaymentSerializer(many=True, read_only=True)
 
     # Поле только для записи (write-only), чтобы принимать массив ID скидок при обновлении
     applied_discounts_ids = serializers.PrimaryKeyRelatedField(
@@ -40,11 +41,26 @@ class DealDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'status', 'booking_start_date', 'booking_end_date', 'client', 'property',
             'initial_price', 'initial_price_per_sqm', 'contract_price', 'notes',
-            'created_by', 'created_at', 'applied_discounts', 'applied_discounts_ids'
+            'created_by', 'created_at', 'applied_discounts', 'applied_discounts_ids',
+            'payments', 'contract_date'
         ]
         # Поля, которые нельзя изменять напрямую через этот сериализатор
         read_only_fields = [
             'id', 'status', 'booking_start_date', 'client', 'property',
-            'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts'
+            'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments'
         ]
 
+    def validate_contract_number(self, value):
+        # Пустое значение разрешено, но если оно передано, преобразуем его в None
+        if not value:
+            return None
+
+        # Проверяем уникальность, исключая текущую сделку (при редактировании)
+        query = Deal.objects.filter(contract_number=value)
+        if self.instance:
+            query = query.exclude(pk=self.instance.pk)
+
+        if query.exists():
+            raise serializers.ValidationError("Сделка с таким номером договора уже существует.")
+
+        return value

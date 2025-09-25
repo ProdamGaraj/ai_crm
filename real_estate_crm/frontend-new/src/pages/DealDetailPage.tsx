@@ -1,24 +1,43 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { getDealById, updateDeal } from '../api/deals';
 import type { DealUpdatePayload } from '../api/deals';
 import DiscountsModal from '../components/deals/DiscountsModal';
+import PaymentSchedule from '../components/deals/PaymentSchedule';
+import DocumentGeneration from '../components/deals/DocumentGeneration';
+
 import {
   Typography, CircularProgress, Alert, Paper, Grid, Box, TextField, Button,
-  Divider, Link as MuiLink, Stack
+  Divider, Link as MuiLink, Stack, Stepper, Step, StepLabel, StepContent
 } from '@mui/material';
 
-type DealFormInputs = {
-  contract_price: number | string; // Может быть строкой из-за форматирования
-  notes: string;
-};
+type DealFormInputs = Pick<DealUpdatePayload, 'contract_price' | 'notes' | 'contract_number' | 'contract_date'>;
+
+// Вспомогательный компонент для панели вкладок
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div role="tabpanel" hidden={value !== index} {...other}>
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
 
 export default function DealDetailPage() {
   const { dealId } = useParams<{ dealId: string }>();
   const queryClient = useQueryClient();
   const [isDiscountModalOpen, setDiscountModalOpen] = useState(false);
+
+  const [activeStep, setActiveStep] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const { data: deal, isLoading, isError } = useQuery({
     queryKey: ['deal', dealId],
@@ -26,191 +45,178 @@ export default function DealDetailPage() {
     enabled: !!dealId,
   });
 
-  const { register, handleSubmit, control, reset, watch, setValue } = useForm<DealFormInputs>();
-
+  const { register, handleSubmit, reset, watch, setValue } = useForm<DealFormInputs>();
   const watchedContractPrice = watch('contract_price');
 
   useEffect(() => {
+    if (deal && !isInitialized) {
+      let initialStep = 0;
+      if (deal.contract_price) initialStep = 1;
+      if (deal.payments?.length > 0) initialStep = 2;
+      if (deal.payments?.length > 0 && deal.contract_number && deal.contract_date) {
+        initialStep = 3;
+      }
+      setActiveStep(initialStep);
+      setIsInitialized(true);
+    }
     if (deal) {
       reset({
-        contract_price: parseFloat(deal.contract_price || deal.initial_price),
+        contract_price: Number(deal.contract_price || deal.initial_price),
         notes: deal.notes || '',
+        contract_number: deal.contract_number || '',
+        contract_date: deal.contract_date || '',
       });
     }
-  }, [deal, reset]);
+  }, [deal, isInitialized, reset]);
 
   const updateDealMutation = useMutation({
     mutationFn: updateDeal,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
+    onSuccess: (updatedDeal) => {
+      queryClient.setQueryData(['deal', dealId], updatedDeal);
       alert('Изменения сохранены!');
+      if(updatedDeal.contract_price && activeStep === 1) {
+        setActiveStep(2);
+      }
     },
-    onError: (error) => {
-      alert(`Ошибка обновления: ${error.message}`);
+    onError: (error: any) => {
+        const serverError = error.response?.data?.contract_number?.[0] || error.response?.data?.detail;
+        alert(`Ошибка обновления: ${serverError || error.message}`);
     }
   });
 
-  // Эта функция теперь сохраняет все изменения на странице
-  const onFormSubmit = (data: DealFormInputs) => {
+  // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+  const handleConditionsSubmit = (data: DealFormInputs) => {
     const payload: DealUpdatePayload = {
-        ...data,
-        contract_price: Number(data.contract_price), // Убедимся, что отправляем число
-        applied_discounts_ids: deal?.applied_discounts.map(d => d.id) // Передаем текущие скидки
+      notes: data.notes,
+      contract_price: Number(data.contract_price),
+      contract_number: data.contract_number,
+      contract_date: data.contract_date,
+      applied_discounts_ids: deal?.applied_discounts.map(d => d.id)
     };
     updateDealMutation.mutate({ id: Number(dealId), payload });
   };
 
-  // Эта функция теперь только обновляет данные в форме, но не отправляет их на сервер
   const handleDiscountsSave = (newPrice: number, selectedIds: number[]) => {
-    // Обновляем поле contract_price в форме
     setValue('contract_price', newPrice);
-
-    // Сразу отправляем изменения на сервер, включая ID скидок
     const payload: DealUpdatePayload = {
       contract_price: newPrice,
       applied_discounts_ids: selectedIds,
-      notes: watch('notes') // Захватываем текущее значение из поля заметок
+      notes: watch('notes')
     };
     updateDealMutation.mutate({ id: Number(dealId), payload });
-
     setDiscountModalOpen(false);
   };
 
   const pricePerSqmByContract = useMemo(() => {
     const price = Number(watchedContractPrice);
-    if (!deal || !price || deal.property.area <= 0) {
-      return '0.00';
-    }
+    if (!deal || !price || !deal.property || deal.property.area <= 0) return '0.00';
     return (price / deal.property.area).toFixed(2);
   }, [deal, watchedContractPrice]);
-
 
   if (isLoading) return <CircularProgress />;
   if (isError || !deal) return <Alert severity="error">Не удалось загрузить данные сделки.</Alert>;
 
   return (
     <>
-      <form onSubmit={handleSubmit(onFormSubmit)}>
-        <Stack spacing={4}>
-          <Typography variant="h4">Сделка №{deal.id} (Статус: {deal.status})</Typography>
+      <Typography variant="h4" sx={{ mb: 2 }}>Сделка №{deal.id} (Статус: {deal.status})</Typography>
 
-          {/* БЛОК 1: ИНФОРМАЦИЯ О СДЕЛКЕ */}
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>Информация о сделке</Typography>
-            <Divider sx={{ my: 2 }} />
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Дата начала брони"
-                  value={new Date(deal.booking_start_date).toLocaleDateString()}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                 <TextField
-                  label="Дата окончания брони"
-                  value={new Date(deal.booking_end_date).toLocaleDateString()}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                 <TextField
-                  label="Ответственный менеджер"
-                  value={deal.created_by || 'Не назначен'}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography><b>Клиент:</b></Typography>
-                <MuiLink component={RouterLink} to={`/clients/${deal.client.id}`} variant="body1">
-                  {deal.client.full_name} ({deal.client.phone_number})
-                </MuiLink>
-              </Grid>
-            </Grid>
-          </Paper>
+      <Stepper activeStep={activeStep} orientation="vertical">
+        {/* === ШАГ 1: ИНФОРМАЦИЯ О СДЕЛКЕ === */}
+        <Step>
+          <StepLabel onClick={() => setActiveStep(0)} sx={{cursor: 'pointer'}}>Информация о сделке</StepLabel>
+          <StepContent>
+            <Paper sx={{ p: 3, my: 2 }} variant="outlined">
+                <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                        <Typography><b>Клиент:</b> <MuiLink component={RouterLink} to={`/clients/${deal.client.id}`}>{deal.client.full_name}</MuiLink></Typography>
+                        <Typography><b>Объект:</b> {deal.property.property_type} №{deal.property.unit_number}, {deal.property.area} м²</Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <Typography><b>Начало брони:</b> {new Date(deal.booking_start_date).toLocaleString()}</Typography>
+                        <Typography><b>Окончание брони:</b> {new Date(deal.booking_end_date).toLocaleString()}</Typography>
+                    </Grid>
+                </Grid>
+            </Paper>
+            <Button onClick={() => setActiveStep(1)} variant="contained">Далее</Button>
+          </StepContent>
+        </Step>
 
-          {/* БЛОК 2: УСЛОВИЯ СДЕЛКИ */}
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>Условия сделки</Typography>
-            <Divider sx={{ my: 2 }} />
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <Typography variant="h6">Параметры объекта</Typography>
-                <Typography>
-                  <b>Объект:</b> {deal.property.property_type}, №{deal.property.unit_number}, {deal.property.area} м²
-                </Typography>
-              </Grid>
+        {/* === ШАГ 2: УСЛОВИЯ СДЕЛКИ === */}
+        <Step>
+          <StepLabel onClick={() => setActiveStep(1)} sx={{cursor: 'pointer'}}>Условия сделки</StepLabel>
+          <StepContent>
+            <form onSubmit={handleSubmit(handleConditionsSubmit)}>
+              <Paper sx={{ p: 3, my: 2 }} variant="outlined">
+                 <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6} md={3}><TextField label="Стоимость (начальная)" value={Number(deal.initial_price).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
+                    <Grid item xs={12} sm={6} md={3}><TextField label="Цена за м² (начальная)" value={Number(deal.initial_price_per_sqm).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
+                    <Grid item xs={12} sm={6} md={3}><TextField label="Стоимость по договору" type="number" fullWidth {...register('contract_price')} /></Grid>
+                    <Grid item xs={12} sm={6} md={3}><TextField label="Цена за м² (договорная)" value={Number(pricePerSqmByContract).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
+                    <Grid item xs={12}>
+                        <Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)}>Применить скидки</Button>
+                        <Typography>Применено: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || 'нет'}</Typography>
+                    </Grid>
+                    <Grid item xs={12}><TextField label="Примечание к сделке" multiline rows={4} fullWidth {...register('notes')} /></Grid>
+                 </Grid>
+              </Paper>
+              <Stack direction="row" spacing={2}>
+                <Button type="submit" variant="contained" disabled={updateDealMutation.isPending}>Сохранить и перейти к графику</Button>
+                <Button onClick={() => setActiveStep(0)}>Назад</Button>
+              </Stack>
+            </form>
+          </StepContent>
+        </Step>
 
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  label="Стоимость (начальная)"
-                  value={new Intl.NumberFormat('ru-RU').format(Number(deal.initial_price))}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              </Grid>
-               <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  label="Цена за м² (начальная)"
-                  value={new Intl.NumberFormat('ru-RU').format(Number(deal.initial_price_per_sqm))}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Controller
-                  name="contract_price"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField {...field} label="Стоимость по договору" type="number" fullWidth />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                 <TextField
-                  label="Цена за м² (договорная)"
-                  value={new Intl.NumberFormat('ru-RU').format(Number(pricePerSqmByContract))}
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              </Grid>
+        {/* === ШАГ 3: ГРАФИК ПЛАТЕЖЕЙ === */}
+        <Step>
+          <StepLabel onClick={() => deal.contract_price && setActiveStep(2)} error={!deal.contract_price} sx={{cursor: 'pointer'}}>График платежей</StepLabel>
+          <StepContent>
+             <Paper sx={{ p: 3, my: 2 }} variant="outlined">
+                {deal.contract_price ? (
+                    <PaymentSchedule
+                        dealId={deal.id}
+                        contractPrice={Number(deal.contract_price)}
+                        existingPayments={deal.payments || []}
+                    />
+                ) : <Alert severity="warning">Сначала сохраните "Стоимость по договору" на предыдущем шаге.</Alert>}
+            </Paper>
+            <Stack direction="row" spacing={2}>
+                <Button onClick={() => setActiveStep(1)}>Назад</Button>
+                <Button variant="contained" onClick={() => setActiveStep(3)} disabled={!deal.payments || deal.payments.length === 0}>Далее</Button>
+            </Stack>
+          </StepContent>
+        </Step>
 
-              <Grid item xs={12}>
-                <Typography variant="h6">Скидки</Typography>
-                <Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)}>
-                    Применить скидки
-                </Button>
-                 {deal.applied_discounts.length > 0 ? (
-                    <Typography>
-                        Применено: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ')}
-                    </Typography>
-                ) : (
-                    <Typography color="text.secondary">Скидки не применены.</Typography>
-                )}
-              </Grid>
+        {/* === ШАГ 4: ДОКУМЕНТЫ === */}
+        <Step>
+          <StepLabel onClick={() => deal.payments?.length > 0 && setActiveStep(3)} error={!deal.payments || deal.payments.length === 0} sx={{cursor: 'pointer'}}>Документы</StepLabel>
+          <StepContent>
+            <form onSubmit={handleSubmit(handleConditionsSubmit)}>
+                 <Paper sx={{ p: 3, my: 2 }} variant="outlined">
+                    <Typography variant="h6" gutterBottom>Данные договора</Typography>
+                     <Grid container spacing={2} sx={{mb: 2}}>
+                        <Grid item xs={12} md={6}>
+                            <TextField fullWidth label="Номер договора" {...register('contract_number')} />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <TextField fullWidth label="Дата договора" type="date" InputLabelProps={{ shrink: true }} {...register('contract_date')} />
+                        </Grid>
+                     </Grid>
+                     <Button type="submit" variant="outlined" size="small" disabled={updateDealMutation.isPending}>Сохранить данные договора</Button>
+                     <Divider sx={{my: 3}}/>
 
-              <Grid item xs={12}>
-                <Controller
-                  name="notes"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField {...field} label="Примечание к сделке" multiline rows={4} fullWidth />
-                  )}
-                />
-              </Grid>
-            </Grid>
-          </Paper>
-
-          <Box>
-            <Button type="submit" variant="contained" disabled={updateDealMutation.isPending}>
-              {updateDealMutation.isPending ? 'Сохранение...' : 'Сохранить изменения'}
-            </Button>
-          </Box>
-        </Stack>
-      </form>
+                    <Typography variant="h6" gutterBottom>Генерация</Typography>
+                    {deal.contract_number && deal.contract_date ? (
+                        <DocumentGeneration deal={deal} />
+                    ) : (
+                        <Alert severity="info">Сохраните номер и дату договора, чтобы сгенерировать документы.</Alert>
+                    )}
+                </Paper>
+                <Button onClick={() => setActiveStep(2)}>Назад</Button>
+            </form>
+          </StepContent>
+        </Step>
+      </Stepper>
 
       {isDiscountModalOpen && (
         <DiscountsModal

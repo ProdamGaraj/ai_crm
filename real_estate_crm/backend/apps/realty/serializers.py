@@ -11,13 +11,14 @@ class ProjectImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectImage
         fields = '__all__'
+        read_only_fields = ['project']
 
 
 class BuildingImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuildingImage
         fields = '__all__'
-
+        read_only_fields = ['building']
 
 class BuildingTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -109,10 +110,11 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
 class BuildingSerializer(serializers.ModelSerializer):
     building_type = BuildingTypeSerializer(read_only=True)
-    building_type_id = serializers.IntegerField(write_only=True, required=False)
+    building_type_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     properties = PropertyListSerializer(many=True, read_only=True)
-    project = ProjectListSerializer(read_only=True)  # Используем краткий сериализатор проекта
+    project = ProjectListSerializer(read_only=True)
     logs = BuildingLogSerializer(many=True, read_only=True)
+    gallery_images = BuildingImageSerializer(many=True, read_only=True) # <--- ДОБАВЛЕНО
 
     class Meta:
         model = Building

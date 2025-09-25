@@ -1,7 +1,7 @@
 import pandas as pd
 import io
 from django.http import HttpResponse
-
+from .models import BuildingLog
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -10,15 +10,15 @@ from rest_framework.parsers import MultiPartParser
 from .filters import ProjectFilter, BuildingFilter
 from .serializers import BuildingSerializer
 from .models import (
-    Project, Building, BuildingType, Property, Layout, Discount, DiscountLog, BuildingLog
+    Project, Building, BuildingType, Property, Layout, Discount, DiscountLog, BuildingLog, ProjectImage, BuildingImage
 )
 from .serializers import (
     ProjectListSerializer, ProjectDetailSerializer,
     BuildingSerializer, BuildingTypeSerializer,
     LayoutSerializer, PropertyDetailSerializer,
-    DiscountListSerializer, DiscountDetailSerializer  # Correct serializers are already imported here
+    DiscountListSerializer, DiscountDetailSerializer, ProjectImageSerializer,BuildingImageSerializer  # Correct serializers are already imported here
 )
-
+from .filters import ProjectFilter, BuildingFilter
 
 # --- Views for Projects ---
 class ProjectListView(generics.ListCreateAPIView):
@@ -33,7 +33,24 @@ class ProjectListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+class ProjectImageDetailView(generics.DestroyAPIView):
+    """ View для удаления изображения из галереи """
+    serializer_class = ProjectImageSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        # Убедимся, что можно удалить только фото из нужного проекта
+        return ProjectImage.objects.filter(project_id=self.kwargs['project_pk'])
+
+class ProjectImageCreateView(generics.CreateAPIView):
+    """ View для загрузки нового изображения в галерею проекта """
+    serializer_class = ProjectImageSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser] # Для обработки загрузки файлов
+
+    def perform_create(self, serializer):
+        project = Project.objects.get(pk=self.kwargs['project_pk'])
+        serializer.save(project=project)
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectDetailSerializer
@@ -60,6 +77,39 @@ class BuildingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Building.objects.filter(project_id=self.kwargs['project_pk'])
+
+    # --- ДОБАВЬТЕ ЭТОТ МЕТОД ДЛЯ ЛОГИРОВАНИЯ ---
+    def perform_update(self, serializer):
+        old_instance = self.get_object()
+        old_data = self.get_serializer(old_instance).data
+
+        instance = serializer.save(updated_by=self.request.user)
+        new_data = self.get_serializer(instance).data
+
+        changes = []
+        # Сравниваем старые и новые данные
+        for key in old_data:
+            if old_data.get(key) != new_data.get(key):
+                # Исключаем поля, которые не нужно логировать
+                if key not in ['updated_at', 'logs', 'properties', 'gallery_images', 'project', 'created_at']:
+                    # Обрабатываем вложенные объекты (как building_type)
+                    if isinstance(old_data.get(key), dict):
+                        old_val_str = old_data.get(key, {}).get('name', 'пусто')
+                        new_val_str = new_data.get(key, {}).get('name', 'пусто')
+                    else:
+                        old_val_str = old_data.get(key) or "пусто"
+                        new_val_str = new_data.get(key) or "пусто"
+
+                    if old_val_str != new_val_str:
+                        changes.append(f"Поле '{key}' изменено с '{old_val_str}' на '{new_val_str}'")
+
+        if changes:
+            action_text = "Данные дома обновлены. " + "; ".join(changes)
+            BuildingLog.objects.create(
+                building=instance,
+                user=self.request.user,
+                action=action_text
+            )
 
 
 # --- Views for Building Types ---
@@ -265,3 +315,23 @@ class DiscountDetailView(generics.RetrieveUpdateDestroyAPIView):
                 user=self.request.user,
                 action=action_text
             )
+# --- Views for Building Gallery ---
+
+class BuildingImageCreateView(generics.CreateAPIView):
+    """ View для загрузки нового изображения в галерею дома """
+    serializer_class = BuildingImageSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def perform_create(self, serializer):
+        building = Building.objects.get(pk=self.kwargs['building_pk'], project_id=self.kwargs['project_pk'])
+        serializer.save(building=building)
+
+
+class BuildingImageDetailView(generics.DestroyAPIView):
+    """ View для удаления изображения из галереи дома """
+    serializer_class = BuildingImageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return BuildingImage.objects.filter(building_id=self.kwargs['building_pk'])

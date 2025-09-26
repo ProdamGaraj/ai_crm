@@ -64,10 +64,26 @@ class BuildingLogSerializer(serializers.ModelSerializer):
 
 class PropertyListSerializer(serializers.ModelSerializer):
     layout = LayoutMiniSerializer(read_only=True)
+    active_deal_id = serializers.SerializerMethodField() # <--- НОВОЕ ПОЛЕ
+
     class Meta:
         model = Property
-        # Добавляем ID связанной сделки. Если сделки нет, будет null.
-        fields = ['id', 'unit_number', 'property_type', 'status', 'area', 'price', 'floor', 'entrance', 'layout', 'description', 'deal']
+        # Заменяем 'deal' на 'active_deal_id'
+        fields = ['id', 'unit_number', 'property_type', 'status', 'area', 'price', 'floor', 'entrance', 'layout', 'description', 'active_deal_id']
+
+    def get_active_deal_id(self, obj):
+        """
+        Ищет активную сделку (не отмененную/расторгнутую/завершенную) для этого объекта
+        и возвращает ее ID.
+        """
+        active_statuses = [
+            'BOOKING',
+            'IN_PROGRESS',
+            'CLOSED_WON'
+        ]
+        # Используем related_name 'deals', который мы задали в модели
+        active_deal = obj.deals.filter(status__in=active_statuses).first()
+        return active_deal.id if active_deal else None
 
 
 class PropertyDetailSerializer(serializers.ModelSerializer):

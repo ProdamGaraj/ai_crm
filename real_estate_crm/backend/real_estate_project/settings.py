@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -144,4 +144,11 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend'
     ],
+}
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),      # access-токен будет жить 1 час
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),       # refresh-токен будет жить 7 дней
+    "ROTATE_REFRESH_TOKENS": True,                     # При обновлении refresh-токен также будет заменяться на новый
+    "BLACKLIST_AFTER_ROTATION": True,                  # Старый refresh-токен будет добавлен в черный список
+    "UPDATE_LAST_LOGIN": True,                         # Обновлять поле last_login у пользователя при входе
 }

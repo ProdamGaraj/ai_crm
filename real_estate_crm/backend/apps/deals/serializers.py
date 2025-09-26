@@ -49,12 +49,11 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'initial_price', 'initial_price_per_sqm', 'contract_price', 'notes',
             'created_by', 'created_at', 'applied_discounts', 'applied_discounts_ids',
             'payments', 'contract_number', 'contract_date',
-            # --- ДОБАВЬТЕ ЭТИ ПОЛЯ ---
-            'signed_document_scan', 'client_signature_date', 'company_signature_date','logs'
+            'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date'
         ]
         read_only_fields = [
             'id', 'status', 'booking_start_date', 'client', 'property',
-            'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments','logs'
+            'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments','logs','cancellation_reason', 'termination_document_scan', 'termination_date'
         ]
 
     def validate_contract_number(self, value):

@@ -24,7 +24,7 @@ export interface Property {
   entrance: number;
   layout: LayoutMini | null;
   description: string | null;
-  deal: number | null; // ID связанной сделки, если она есть
+  active_deal_id: number | null;
 }
 
 /**

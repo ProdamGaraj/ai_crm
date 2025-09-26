@@ -9,7 +9,7 @@ import type { Payment } from './finances';
  */
 export interface Deal {
   id: number;
-  status: 'BOOKING' | 'IN_PROGRESS' | 'CLOSED_WON' | 'CANCELLED';
+  status: 'BOOKING' | 'IN_PROGRESS' | 'CLOSED_WON' | 'CANCELLED'| 'TERMINATED';
   booking_start_date: string;
   booking_end_date: string;
   client: Client; // Вложенный объект клиента
@@ -26,8 +26,35 @@ export interface Deal {
   client_signature_date: string | null;
   company_signature_date: string | null;
   logs: DealLog[];
+  cancellation_reason: string | null;
+  termination_document_scan: string | null;
+  termination_date: string | null;
+  logs: DealLog[];
+}
+export interface DealCancellationPayload {
+  cancellation_reason?: string;
+  termination_document_scan?: File;
+  termination_date?: string;
 }
 
+// --- НОВАЯ ФУНКЦИЯ ДЛЯ API ---
+export const cancelOrTerminateDeal = async ({ dealId, payload }: { dealId: number; payload: DealCancellationPayload }): Promise<Deal> => {
+  const formData = new FormData();
+  if (payload.cancellation_reason) {
+    formData.append('cancellation_reason', payload.cancellation_reason);
+  }
+  if (payload.termination_document_scan) {
+    formData.append('termination_document_scan', payload.termination_document_scan);
+  }
+  if (payload.termination_date) {
+    formData.append('termination_date', payload.termination_date);
+  }
+
+  const response = await apiClient.post(`/deals/${dealId}/cancel/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
 /**
  * Тип для данных при создании сделки (бронировании).
  */

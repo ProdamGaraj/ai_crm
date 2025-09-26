@@ -34,13 +34,14 @@ class Deal(models.Model):
         IN_PROGRESS = 'IN_PROGRESS', 'В работе'
         CLOSED_WON = 'CLOSED_WON', 'Успешно закрыта'
         CANCELLED = 'CANCELLED', 'Отменена'
+        TERMINATED = 'TERMINATED', 'Расторгнута'
 
     # --- Основные участники сделки ---
     client = models.ForeignKey('crm.Client', on_delete=models.PROTECT, related_name='deals', verbose_name="Клиент")
-    property = models.OneToOneField(
+    property = models.ForeignKey(
         'realty.Property',
         on_delete=models.PROTECT,
-        related_name='deal',
+        related_name='deals',
         verbose_name="Объект недвижимости"
     )
 
@@ -82,6 +83,14 @@ class Deal(models.Model):
     )
     client_signature_date = models.DateField(null=True, blank=True, verbose_name="Дата подписания клиентом")
     company_signature_date = models.DateField(null=True, blank=True, verbose_name="Дата подписания компанией")
+    cancellation_reason = models.TextField(blank=True, null=True, verbose_name="Причина отмены")
+    termination_document_scan = models.FileField(
+        upload_to='deals/termination_documents/',
+        null=True,
+        blank=True,
+        verbose_name="Скан документа о расторжении"
+    )
+    termination_date = models.DateField(null=True, blank=True, verbose_name="Дата расторжения")
     # --- Системные поля (Логи) ---
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")

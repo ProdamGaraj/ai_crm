@@ -11,7 +11,6 @@ import {
   Button,
   Stack,
   CircularProgress,
-  Link as MuiLink
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import type { Property } from '../../api/buildings';
@@ -34,7 +33,6 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
   const { register, handleSubmit, setValue } = useForm<{ description: string }>();
 
   useEffect(() => {
-    // При открытии окна или смене объекта, обновляем значение в поле комментария
     if (property) {
       setValue('description', property.description || '');
     }
@@ -43,7 +41,6 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
   const updatePropMutation = useMutation({
     mutationFn: updateProperty,
     onSuccess: () => {
-      // Обновляем данные дома (включая шахматку)
       queryClient.invalidateQueries({ queryKey: ['building', String(buildingId)] });
       onClose();
     },
@@ -55,7 +52,7 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
           queryClient.invalidateQueries({ queryKey: ['building', String(buildingId)] });
           setBookingModalOpen(false);
           onClose();
-          navigate(`/deals/${data.id}`); // Переходим в карточку новой сделки
+          navigate(`/deals/${data.id}`);
       }
   });
 
@@ -71,7 +68,6 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
 
   const onBookingSubmit = (data: DealPayload) => {
       if (!property) return;
-      // Добавляем ID объекта в данные для отправки
       createDealMutation.mutate({ ...data, property: property.id });
   };
 
@@ -97,11 +93,11 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
               <Typography>Цена: {property.price}</Typography>
 
               <Stack direction="row" spacing={2} sx={{ mt: 2, mb: 2, flexWrap: 'wrap' }}>
-                {property.deal ? (
+                {property.active_deal_id ? (
                   <Button
                     variant="contained"
                     component={RouterLink}
-                    to={`/deals/${property.deal}`}
+                    to={`/deals/${property.active_deal_id}`}
                   >
                     Перейти в сделку
                   </Button>
@@ -135,7 +131,6 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
         </DialogContent>
       </Dialog>
 
-      {/* Второе модальное окно для бронирования */}
       <Dialog open={isBookingModalOpen} onClose={() => setBookingModalOpen(false)}>
           <DialogTitle>Забронировать объект №{property.unit_number}</DialogTitle>
           <DialogContent>
@@ -145,4 +140,3 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
     </>
   );
 }
-

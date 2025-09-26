@@ -63,11 +63,11 @@ class MeetingLogSerializer(serializers.ModelSerializer):
 
 class MeetingSerializer(serializers.ModelSerializer):
     client = ClientListSerializer(read_only=True)
-    client_id = serializers.IntegerField(write_only=True) # <-- ИСПРАВЛЕНИЕ ЗДЕСЬ
+    client_id = serializers.IntegerField(write_only=True)
     application_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     creator = serializers.StringRelatedField(read_only=True)
     executor = serializers.StringRelatedField(read_only=True)
-    executor_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='executor') # Упрощено для приема ID
+    executor_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='executor')
     interested_building = BuildingMiniSerializer(read_only=True)
     interested_building_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     is_overdue = serializers.BooleanField(read_only=True)
@@ -85,6 +85,22 @@ class MeetingSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'planned_date': {'required': True},
         }
+
+    def validate(self, data):
+        """
+        Проверяем, что при закрытии встречи (успешном или нет)
+        обязательно указан комментарий с результатом.
+        """
+        status = data.get('status')
+        result_comment = data.get('result_comment')
+
+        # Проверяем только при изменении статуса на "закрывающий"
+        if status in [Meeting.MeetingStatus.COMPLETED, Meeting.MeetingStatus.CANCELLED]:
+            if not result_comment:
+                raise serializers.ValidationError({
+                    "result_comment": "Необходимо указать результат встречи при ее закрытии."
+                })
+        return data
 
 # --- Детальные сериализаторы ---
 class ClientDetailSerializer(serializers.ModelSerializer):

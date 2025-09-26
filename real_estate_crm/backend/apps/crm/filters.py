@@ -1,7 +1,7 @@
 from django_filters import rest_framework as filters
 from .models import Client
 from django.contrib.auth.models import User
-from .models import Client, Application # Убедитесь, что Application импортирована
+from .models import Client, Application, Meeting # Убедитесь, что Application импортирована
 from apps.realty.models import Project
 
 class ClientFilter(filters.FilterSet):
@@ -82,3 +82,13 @@ class ApplicationFilter(filters.FilterSet):
             'created_at_after',
             'created_at_before',
         ]
+class MeetingFilter(filters.FilterSet):
+    client_name = filters.CharFilter(field_name='client__full_name', lookup_expr='icontains')
+    executor_id = filters.NumberFilter(field_name='executor__id')
+    status = filters.ChoiceFilter(choices=Meeting.MeetingStatus.choices)
+    planned_date_after = filters.DateFilter(field_name='planned_date', lookup_expr='date__gte')
+    planned_date_before = filters.DateFilter(field_name='planned_date', lookup_expr='date__lte')
+
+    class Meta:
+        model = Meeting
+        fields = ['client_name', 'executor_id', 'status', 'planned_date_after', 'planned_date_before']

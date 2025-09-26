@@ -8,9 +8,13 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, TextField, Chip, Link as MuiLink,
   Stack, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
+import { DataGrid, type GridColDef } from '@mui/x-data-grid'; // <-- Импорт DataGrid
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot, timelineOppositeContentClasses } from '@mui/lab';
 import { Controller, useForm } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
+import HumanizedLog from '../components/logs/HumanizedLog'; // <-- Импорт HumanizedLog
+import MeetingForm from '../components/meetings/MeetingForm'; // <-- Импорт MeetingForm
+import type { Meeting } from '../api/meetings'; // <-- Импорт типа Meeting
 
 // Вспомогательный компонент для панели вкладок
 interface TabPanelProps {
@@ -28,12 +32,22 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+// Колонки для таблицы встреч
+const meetingColumns: GridColDef<Meeting>[] = [
+    { field: 'id', headerName: 'ID', width: 80 },
+    { field: 'status', headerName: 'Статус', width: 150 },
+    { field: 'planned_date', headerName: 'План. дата', type: 'dateTime', width: 180, valueGetter: (value) => value ? new Date(value) : null },
+    { field: 'executor', headerName: 'Исполнитель', width: 150 },
+];
+
+
 export default function ApplicationDetailPage() {
   const { applicationId } = useParams<{ applicationId: string }>();
   const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false); // <-- Состояние для модального окна встречи
   const [targetStatus, setTargetStatus] = useState<'JUNK' | 'REJECTED' | null>(null);
   const queryClient = useQueryClient();
 
@@ -44,15 +58,10 @@ export default function ApplicationDetailPage() {
   });
 
   const { data: reasons, isLoading: isLoadingReasons } = useQuery({
-  // 1. Ключ кэша теперь зависит от статуса, чтобы списки не смешивались
-  queryKey: ['rejectionReasons', targetStatus],
-
-  // 2. Функция запроса вызывается с нужным типом ('JUNK' или 'REJECTED')
-  queryFn: () => getRejectionReasons(targetStatus!),
-
-  // 3. Запрос активен, только когда открыто модальное окно (когда targetStatus не null)
-  enabled: !!targetStatus,
-});
+    queryKey: ['rejectionReasons', targetStatus],
+    queryFn: () => getRejectionReasons(targetStatus!),
+    enabled: !!targetStatus,
+  });
 
   const { register, handleSubmit, control, reset, formState: { errors } } = useForm<ApplicationPayload>({
     defaultValues: app,
@@ -131,49 +140,64 @@ export default function ApplicationDetailPage() {
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
           <Tab label="Детали заявки" />
+          <Tab label={`Встречи (${app.meetings?.length || 0})`} />
           <Tab label={`Логи (${app.logs.length})`} />
         </Tabs>
       </Box>
-      <form onSubmit={handleSubmit(onFormSubmit)}>
-        <TabPanel value={tabValue} index={0}>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="interested_property_type"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <FormControl fullWidth disabled={!isEditable}>
-                      <InputLabel>Тип недвижимости</InputLabel>
-                      <Select {...field} label="Тип недвижимости">
-                        <MenuItem value="APARTMENT">Квартира</MenuItem>
-                        <MenuItem value="COMMERCIAL">Коммерция</MenuItem>
-                        <MenuItem value="PARKING">Парковка</MenuItem>
-                        <MenuItem value="STORAGE">Кладовка</MenuItem>
-                        <MenuItem value="COTTAGE">Коттедж</MenuItem>
-                      </Select>
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField label="Причина отказа/нецелевой" fullWidth disabled value={app.rejection_reason?.name || ''} />
-              </Grid>
-              <Grid item xs={12} sm={3}><TextField label="Площадь от (м²)" type="number" fullWidth disabled={!isEditable} {...register('min_area')} /></Grid>
-              <Grid item xs={12} sm={3}><TextField label="Площадь до (м²)" type="number" fullWidth disabled={!isEditable} {...register('max_area')} /></Grid>
-              <Grid item xs={12} sm={3}><TextField label="Этаж от" type="number" fullWidth disabled={!isEditable} {...register('min_floor')} /></Grid>
-              <Grid item xs={12} sm={3}><TextField label="Этаж до" type="number" fullWidth disabled={!isEditable} {...register('max_floor')} /></Grid>
-              <Grid item xs={12}><TextField label="Заметки" fullWidth multiline rows={4} disabled={!isEditable} {...register('notes')} /></Grid>
-            </Grid>
-            {isEditable && (
-              <Button type="submit" variant="contained" sx={{ mt: 3 }} disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? 'Сохранение...' : 'Сохранить и взять в работу'}
-              </Button>
-            )}
-        </TabPanel>
-      </form>
 
-      <TabPanel value={tabValue} index={1}>
+        <TabPanel value={tabValue} index={0}>
+            <form onSubmit={handleSubmit(onFormSubmit)}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <Controller
+                      name="interested_property_type"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <FormControl fullWidth disabled={!isEditable}>
+                          <InputLabel>Тип недвижимости</InputLabel>
+                          <Select {...field} label="Тип недвижимости">
+                            <MenuItem value="APARTMENT">Квартира</MenuItem>
+                            <MenuItem value="COMMERCIAL">Коммерция</MenuItem>
+                            <MenuItem value="PARKING">Парковка</MenuItem>
+                            <MenuItem value="STORAGE">Кладовка</MenuItem>
+                            <MenuItem value="COTTAGE">Коттедж</MenuItem>
+                          </Select>
+                        </FormControl>
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Причина отказа/нецелевой" fullWidth disabled value={app.rejection_reason?.name || ''} />
+                  </Grid>
+                  <Grid item xs={12} sm={3}><TextField label="Площадь от (м²)" type="number" fullWidth disabled={!isEditable} {...register('min_area')} /></Grid>
+                  <Grid item xs={12} sm={3}><TextField label="Площадь до (м²)" type="number" fullWidth disabled={!isEditable} {...register('max_area')} /></Grid>
+                  <Grid item xs={12} sm={3}><TextField label="Этаж от" type="number" fullWidth disabled={!isEditable} {...register('min_floor')} /></Grid>
+                  <Grid item xs={12} sm={3}><TextField label="Этаж до" type="number" fullWidth disabled={!isEditable} {...register('max_floor')} /></Grid>
+                  <Grid item xs={12}><TextField label="Заметки" fullWidth multiline rows={4} disabled={!isEditable} {...register('notes')} /></Grid>
+                </Grid>
+                {isEditable && (
+                  <Button type="submit" variant="contained" sx={{ mt: 3 }} disabled={updateMutation.isPending}>
+                    {updateMutation.isPending ? 'Сохранение...' : 'Сохранить и взять в работу'}
+                  </Button>
+                )}
+            </form>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+            <Button variant="contained" sx={{ mb: 2 }} onClick={() => setIsMeetingModalOpen(true)}>
+                Назначить встречу
+            </Button>
+            <Box sx={{ height: 400, width: '100%' }}>
+              <DataGrid
+                rows={app.meetings || []}
+                columns={meetingColumns}
+                disableRowSelectionOnClick
+              />
+            </Box>
+        </TabPanel>
+
+      <TabPanel value={tabValue} index={2}>
         <Timeline sx={{ [`& .${timelineOppositeContentClasses.root}`]: { flex: 0.2 } }}>
           {app.logs.map((log) => (
             <TimelineItem key={log.id}>
@@ -181,7 +205,7 @@ export default function ApplicationDetailPage() {
               <TimelineContent sx={{ py: '12px', px: 2 }}>
                 <Typography variant="body2" color="text.secondary">{new Date(log.created_at).toLocaleString('ru-RU')}</Typography>
                 <Typography component="span" fontWeight="bold">{log.user || 'Система'}</Typography>
-                <Typography>{log.action}</Typography>
+                <HumanizedLog log={log} />
               </TimelineContent>
             </TimelineItem>
           ))}
@@ -228,6 +252,23 @@ export default function ApplicationDetailPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog open={isMeetingModalOpen} onClose={() => setIsMeetingModalOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Новая встреча по заявке №{app.id}</DialogTitle>
+          <DialogContent>
+              {app && (
+                  <MeetingForm
+                      clientId={app.client.id}
+                      applicationId={app.id}
+                      onSuccess={() => {
+                          setIsMeetingModalOpen(false);
+                          queryClient.invalidateQueries({ queryKey: ['application', applicationId] });
+                      }}
+                  />
+              )}
+          </DialogContent>
+      </Dialog>
+
     </Paper>
   );
 }

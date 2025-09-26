@@ -43,8 +43,11 @@ export interface MeetingPayload {
 /**
  * Получает список всех встреч
  */
-export const getMeetings = async (): Promise<Meeting[]> => {
-  const response = await apiClient.get('/meetings/');
+export const getMeetings = async (filters: MeetingFilters = {}): Promise<Meeting[]> => {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+  );
+  const response = await apiClient.get('/meetings/', { params });
   return response.data;
 };
 
@@ -63,3 +66,10 @@ export const updateMeeting = async ({ id, payload }: { id: number; payload: Part
     const response = await apiClient.patch(`/meetings/${id}/`, payload);
     return response.data;
 };
+export interface MeetingFilters {
+  client_name?: string;
+  executor_id?: number | null;
+  status?: string;
+  planned_date_after?: string;
+  planned_date_before?: string;
+}

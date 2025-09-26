@@ -9,7 +9,7 @@ from .serializers import (
     ApplicationListSerializer, ApplicationDetailSerializer,
     PublicApplicationSerializer, RejectionReasonSerializer, MeetingSerializer
 )
-from .filters import ClientFilter, ApplicationFilter
+from .filters import ClientFilter, ApplicationFilter, MeetingFilter
 from django.contrib.auth.models import User # Добавьте этот импорт в начало файла
 from .serializers import UserSerializer
 
@@ -195,3 +195,17 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+# --- Views для Встреч ---
+class MeetingListCreateView(generics.ListCreateAPIView):
+    serializer_class = MeetingSerializer
+    permission_classes = [IsAuthenticated]
+    filterset_class = MeetingFilter # <-- ДОБАВЬТЕ ЭТУ СТРОКУ
+
+    def get_queryset(self):
+        # Удаляем старую логику фильтрации, теперь это делает filterset_class
+        return Meeting.objects.all().select_related(
+            'client', 'creator', 'executor', 'interested_building'
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(creator=self.request.user)

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.conf import settings
 from .models import (
     Project, Building, BuildingType, Property, Layout, Discount, DiscountLog,
     BuildingLog, ProjectImage, BuildingImage
@@ -64,12 +65,14 @@ class BuildingLogSerializer(serializers.ModelSerializer):
 
 class PropertyListSerializer(serializers.ModelSerializer):
     layout = LayoutMiniSerializer(read_only=True)
-    active_deal_id = serializers.SerializerMethodField() # <--- НОВОЕ ПОЛЕ
+    active_deal_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Property
-        # Заменяем 'deal' на 'active_deal_id'
-        fields = ['id', 'unit_number', 'property_type', 'status', 'area', 'price', 'floor', 'entrance', 'layout', 'description', 'active_deal_id']
+        fields = [
+            'id', 'unit_number', 'property_type', 'status', 'area', 'price',
+            'floor', 'entrance', 'riser', 'has_finishing', 'layout', 'description', 'active_deal_id'
+        ]
 
     def get_active_deal_id(self, obj):
         """
@@ -130,7 +133,7 @@ class BuildingSerializer(serializers.ModelSerializer):
     properties = PropertyListSerializer(many=True, read_only=True)
     project = ProjectListSerializer(read_only=True)
     logs = BuildingLogSerializer(many=True, read_only=True)
-    gallery_images = BuildingImageSerializer(many=True, read_only=True) # <--- ДОБАВЛЕНО
+    gallery_images = BuildingImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Building
@@ -147,3 +150,97 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
 
+class PublicImageLayoutSerializer(serializers.ModelSerializer):
+    """ Сериализатор для планировок, отдает полные URL изображений """
+    main_layout_image = serializers.SerializerMethodField()
+    extra_layout_image = serializers.SerializerMethodField()
+    floor_plan_image = serializers.SerializerMethodField()
+    usp_image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Layout
+        fields = ['id', 'name', 'main_layout_image', 'extra_layout_image', 'floor_plan_image', 'usp_image']
+
+    def get_main_layout_image(self, obj):
+        if obj.main_layout_image:
+            return f"{settings.SITE_URL}{obj.main_layout_image.url}"
+        return None
+    def get_extra_layout_image(self, obj):
+        if obj.extra_layout_image:
+            return f"{settings.SITE_URL}{obj.extra_layout_image.url}"
+        return None
+    def get_floor_plan_image(self, obj):
+        if obj.floor_plan_image:
+            return f"{settings.SITE_URL}{obj.floor_plan_image.url}"
+        return None
+    def get_usp_image(self, obj):
+        if obj.usp_image:
+            return f"{settings.SITE_URL}{obj.usp_image.url}"
+        return None
+
+
+class PublicPropertySerializer(serializers.ModelSerializer):
+    """ Сериализатор для объектов недвижимости (публичный) """
+    layout = PublicImageLayoutSerializer(read_only=True)
+    class Meta:
+        model = Property
+        fields = [
+            'id', 'unit_number', 'property_type', 'status', 'area', 'price',
+            'floor', 'entrance', 'has_finishing', 'layout'
+        ]
+
+class PublicBuildingImageSerializer(serializers.ModelSerializer):
+    """ Сериализатор для галереи дома (публичный) """
+    image = serializers.SerializerMethodField()
+    class Meta:
+        model = BuildingImage
+        fields = ['id', 'image', 'caption']
+    def get_image(self, obj):
+        return f"{settings.SITE_URL}{obj.image.url}"
+
+
+class PublicBuildingDetailSerializer(serializers.ModelSerializer):
+    """ Сериализатор для детальной карточки дома (публичный) """
+    properties = PublicPropertySerializer(many=True, read_only=True)
+    gallery_images = PublicBuildingImageSerializer(many=True, read_only=True)
+    class Meta:
+        model = Building
+        fields = ['id', 'name', 'floors_count', 'status', 'properties', 'gallery_images']
+
+
+class PublicProjectImageSerializer(serializers.ModelSerializer):
+    """ Сериализатор для галереи проекта (публичный) """
+    image = serializers.SerializerMethodField()
+    class Meta:
+        model = ProjectImage
+        fields = ['id', 'image', 'caption']
+    def get_image(self, obj):
+        return f"{settings.SITE_URL}{obj.image.url}"
+
+
+class PublicProjectListSerializer(serializers.ModelSerializer):
+    """ Сериализатор для списка проектов (публичный) """
+    logo = serializers.SerializerMethodField()
+    class Meta:
+        model = Project
+        fields = ['id', 'name', 'address', 'logo']
+    def get_logo(self, obj):
+        if obj.logo:
+            return f"{settings.SITE_URL}{obj.logo.url}"
+        return None
+
+class PublicProjectDetailSerializer(serializers.ModelSerializer):
+    """ Сериализатор для детальной карточки проекта (публичный) """
+    buildings = PublicBuildingDetailSerializer(many=True, read_only=True)
+    gallery_images = PublicProjectImageSerializer(many=True, read_only=True)
+    logo = serializers.SerializerMethodField()
+    class Meta:
+        model = Project
+        fields = [
+            'id', 'name', 'address', 'description', 'logo', 'usp_1',
+            'usp_2', 'usp_3', 'buildings', 'gallery_images'
+        ]
+    def get_logo(self, obj):
+        if obj.logo:
+            return f"{settings.SITE_URL}{obj.logo.url}"
+        return None

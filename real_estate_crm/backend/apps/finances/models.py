@@ -40,6 +40,14 @@ class Payment(models.Model):
         CASH = 'CASH', 'Наличные'
         CASHLESS = 'CASHLESS', 'Безналичные'
 
+    class PaymentStatus(models.TextChoices):
+        PENDING = 'PENDING', 'К оплате'
+        PAID = 'PAID', 'Оплачен'
+        OVERDUE = 'OVERDUE', 'Просрочен'
+        TO_BE_RETURNED = 'TO_BE_RETURNED', 'К возврату'
+        RETURNED = 'RETURNED', 'Возвращен'
+
+
     # --- Участники и связи ---
     deal = models.ForeignKey('deals.Deal', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments',
                              verbose_name="Сделка")
@@ -60,6 +68,14 @@ class Payment(models.Model):
     due_date = models.DateField(verbose_name="Дата к оплате")
     payment_date = models.DateField(null=True, blank=True, verbose_name="Дата фактической оплаты")
 
+    # --- Статус ---
+    status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PENDING,
+        verbose_name="Статус"
+    )
+
     # --- Системные поля (Логи) ---
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
@@ -70,20 +86,6 @@ class Payment(models.Model):
         verbose_name = "Платёж"
         verbose_name_plural = "Платежи"
         ordering = ['-due_date']
-
-    @property
-    def is_overdue(self):
-        """ Возвращает True, если платеж просрочен. """
-        return self.payment_date is None and self.due_date < timezone.now().date()
-
-    @property
-    def get_status_display(self):
-        """ Возвращает текстовое представление статуса. """
-        if self.payment_date:
-            return "Оплачен"
-        if self.is_overdue:
-            return "Просрочен"
-        return "К оплате"
 
     def __str__(self):
         return f"Платёж на {self.amount} {self.currency} от {self.client}"

@@ -109,4 +109,37 @@ export interface ApplicationFilters {
   interested_projects?: number | null;
   created_at_after?: string;
   created_at_before?: string;
+  updated_at_before?: string;
 }
+
+export interface ApplicationSummaryFilters {
+    group_by: 'created_by' | 'status' | 'project' | 'source';
+    days_since_update?: number;
+    created_at_after?: string;
+    created_at_before?: string;
+}
+
+export interface ApplicationSummaryResponse {
+    summary: any[];
+    forgotten_count: number;
+}
+
+export const getApplicationSummary = async (filters: ApplicationSummaryFilters): Promise<ApplicationSummaryResponse> => {
+    const response = await apiClient.get('/applications/summary/', { params: filters });
+    return response.data;
+};
+
+export const downloadApplicationSummary = async (filters: ApplicationSummaryFilters) => {
+    const response = await apiClient.get('/applications/summary/', {
+        params: { ...filters, format: 'excel' },
+        responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `application_summary_${filters.group_by}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+};

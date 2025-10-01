@@ -7,7 +7,9 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from .serializers import (
+    PublicProjectListSerializer, PublicProjectDetailSerializer, PublicBuildingDetailSerializer
+)
 from .filters import ProjectFilter, BuildingFilter
 from .models import (
     Project, Building, BuildingType, Property, Layout, Discount, DiscountLog, BuildingLog, ProjectImage, BuildingImage
@@ -345,3 +347,29 @@ class BuildingListViewAll(generics.ListAPIView):
     serializer_class = BuildingMiniSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None # Отключаем пагинацию для этого эндпоинта
+
+class PublicProjectListView(generics.ListAPIView):
+    """
+    Публичный список проектов. Доступен без аутентификации.
+    """
+    queryset = Project.objects.filter(
+        buildings__status=Building.BuildingStatus.FOR_SALE
+    ).distinct()
+    serializer_class = PublicProjectListSerializer
+    permission_classes = [] # Пустой список разрешает доступ всем
+
+class PublicProjectDetailView(generics.RetrieveAPIView):
+    """
+    Публичная детальная страница проекта.
+    """
+    queryset = Project.objects.all()
+    serializer_class = PublicProjectDetailSerializer
+    permission_classes = []
+
+class PublicBuildingDetailView(generics.RetrieveAPIView):
+    """
+    Публичная детальная страница дома.
+    """
+    queryset = Building.objects.filter(status=Building.BuildingStatus.FOR_SALE)
+    serializer_class = PublicBuildingDetailSerializer
+    permission_classes = []

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'apps.documents.apps.DocumentsConfig',
     'django_filters',
+    'apps.reports',
 ]
 
 MIDDLEWARE = [
@@ -135,7 +136,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173", # Адрес по умолчанию для Vite
+    "http://localhost:5173",
+    "http://localhost:5174",
+    'https://5mpxwrp0-5174.euw.devtunnels.ms',
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -152,3 +155,4 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,                  # Старый refresh-токен будет добавлен в черный список
     "UPDATE_LAST_LOGIN": True,                         # Обновлять поле last_login у пользователя при входе
 }
+SITE_URL = 'http://127.0.0.1:8000'

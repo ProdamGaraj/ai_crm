@@ -3,7 +3,7 @@ from .models import Deal, DealLog
 from apps.crm.serializers import ClientListSerializer
 # ИСПРАВЛЕНИЕ: Импортируем DiscountListSerializer
 from apps.realty.serializers import PropertyListSerializer, DiscountListSerializer
-from apps.finances.serializers import PaymentSerializer
+# ИСПРАВЛЕНИЕ: Удаляем импорт PaymentSerializer отсюда
 
 class DealCreateSerializer(serializers.ModelSerializer):
     """
@@ -21,6 +21,17 @@ class DealLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = DealLog
         fields = ['id', 'user', 'action', 'created_at']
+
+class DealListSerializer(serializers.ModelSerializer):
+    client = serializers.StringRelatedField()
+    property = serializers.StringRelatedField()
+    created_by = serializers.StringRelatedField()
+
+    class Meta:
+        model = Deal
+        fields = ['id', 'status', 'client', 'property', 'contract_price', 'created_by', 'created_at']
+
+
 class DealDetailSerializer(serializers.ModelSerializer):
     """
     Сериализатор для детального отображения и обновления сделки.
@@ -31,7 +42,8 @@ class DealDetailSerializer(serializers.ModelSerializer):
     # Используем DiscountListSerializer для отображения краткой информации о скидках
     applied_discounts = DiscountListSerializer(many=True, read_only=True)
     created_by = serializers.StringRelatedField(read_only=True)
-    payments = PaymentSerializer(many=True, read_only=True)
+    # ИСПРАВЛЕНИЕ: Заменяем прямое поле на SerializerMethodField
+    payments = serializers.SerializerMethodField()
     logs = DealLogSerializer(many=True, read_only=True)
 
     # Поле только для записи (write-only), чтобы принимать массив ID скидок при обновлении
@@ -55,6 +67,12 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'id', 'status', 'booking_start_date', 'client', 'property',
             'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments','logs','cancellation_reason', 'termination_document_scan', 'termination_date'
         ]
+
+    # ИСПРАВЛЕНИЕ: Добавляем метод для сериализации платежей
+    def get_payments(self, obj):
+        from apps.finances.serializers import PaymentSerializer
+        payments = obj.payments.all()
+        return PaymentSerializer(payments, many=True).data
 
     def validate_contract_number(self, value):
         # Пустое значение разрешено, но если оно передано, преобразуем его в None

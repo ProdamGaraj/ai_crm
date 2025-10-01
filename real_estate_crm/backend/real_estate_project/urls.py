@@ -10,12 +10,16 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Подключаем URL-адреса из наших приложений
+    # --- ПУБЛИЧНЫЙ API ДЛЯ САЙТА ---
+    path('api/public/', include('apps.realty.urls_public')),
+
+    # --- API ДЛЯ ВНУТРЕННЕЙ CRM ---
     path('api/', include('apps.crm.urls')),
     path('api/', include('apps.realty.urls')),
     path('api/', include('apps.deals.urls')),
     path('api/', include('apps.finances.urls')),
     path('api/', include('apps.documents.urls')),
+    path('api/', include('apps.reports.urls')),
 
 
     # Эндпоинты для JWT токенов

@@ -1,8 +1,9 @@
 from django_filters import rest_framework as filters
 from .models import Client
 from django.contrib.auth.models import User
-from .models import Client, Application, Meeting # Убедитесь, что Application импортирована
+from .models import Client, Application, Meeting  # Убедитесь, что Application импортирована
 from apps.realty.models import Project
+
 
 class ClientFilter(filters.FilterSet):
     # Фильтр по имени (по частичному совпадению без учета регистра)
@@ -48,6 +49,8 @@ class ClientFilter(filters.FilterSet):
             'created_at_before',
             'created_by'
         ]
+
+
 # Фильтры для заявок
 class ApplicationFilter(filters.FilterSet):
     # Фильтр по статусу
@@ -72,6 +75,8 @@ class ApplicationFilter(filters.FilterSet):
     # Фильтр по дате создания "до"
     created_at_before = filters.DateFilter(field_name='created_at', lookup_expr='date__lte')
 
+    updated_at_before = filters.DateFilter(field_name='updated_at', lookup_expr='date__lte')
+
     class Meta:
         model = Application
         fields = [
@@ -81,7 +86,10 @@ class ApplicationFilter(filters.FilterSet):
             'interested_projects',
             'created_at_after',
             'created_at_before',
+            'updated_at_before',
         ]
+
+
 class MeetingFilter(filters.FilterSet):
     client_name = filters.CharFilter(field_name='client__full_name', lookup_expr='icontains')
     executor_id = filters.NumberFilter(field_name='executor__id')

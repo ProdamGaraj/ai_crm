@@ -1,21 +1,57 @@
 import { useState, useEffect } from 'react';
 import {
     Box, Typography, CircularProgress, Alert, Chip, Link as MuiLink,
-    Paper, Grid, TextField, FormControl, InputLabel, Select, MenuItem, Autocomplete, Stack
+    Paper, Grid, TextField, FormControl, InputLabel, Select, MenuItem, Autocomplete, Stack, Tabs, Tab
 } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getMeetings, type Meeting, type MeetingFilters } from '../api/meetings';
 import MeetingDetailModal from '../components/meetings/MeetingDetailModal';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { getUsers, type User } from '../api/users';
+import MeetingSummary from '../components/meetings/MeetingSummary'; // Import the new component
+
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    {children}
+                </Box>
+            )}
+        </div>
+    );
+}
 
 export default function MeetingsPage() {
+    const location = useLocation();
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
-    const [filters, setFilters] = useState<MeetingFilters>({});
+    const [tabValue, setTabValue] = useState(location.state?.tab || 0);
+    const [filters, setFilters] = useState<MeetingFilters>(location.state?.filters || {});
     const queryClient = useQueryClient();
-    const { control, watch, register } = useForm<MeetingFilters>();
+    const { control, watch, register, reset } = useForm<MeetingFilters>({
+        defaultValues: filters,
+    });
+
+    useEffect(() => {
+        if (location.state) {
+            setTabValue(location.state.tab || 0);
+            setFilters(location.state.filters || {});
+            reset(location.state.filters || {});
+        }
+    }, [location.state, reset]);
 
     const { data: users, isLoading: isLoadingUsers } = useQuery<User[]>({
         queryKey: ['users'],
@@ -88,57 +124,74 @@ export default function MeetingsPage() {
         <Stack spacing={3}>
             <Typography variant="h4">Встречи</Typography>
 
-            <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
-                <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Controller name="client_name" control={control} render={({ field }) => (
-                                <TextField {...field} onChange={field.onChange} value={field.value || ''} label="Поиск по клиенту" fullWidth size="small" />
-                            )}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                        <Controller name="executor_id" control={control} render={({ field }) => (
-                                <Autocomplete
-                                    options={users || []}
-                                    loading={isLoadingUsers}
-                                    getOptionLabel={(option) => `${option.first_name} ${option.last_name}`.trim() || option.username}
-                                    onChange={(_, data) => field.onChange(data?.id || null)}
-                                    renderInput={(params) => <TextField {...params} label="Исполнитель" size="small" />}
-                                />
-                            )}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={2}>
-                        <Controller name="status" control={control} render={({ field }) => (
-                            <FormControl fullWidth size="small">
-                              <InputLabel>Статус</InputLabel>
-                              <Select {...field} value={field.value || ''} label="Статус">
-                                <MenuItem value=""><em>Все</em></MenuItem>
-                                <MenuItem value="NEW">Новая</MenuItem>
-                                <MenuItem value="COMPLETED">Состоялась</MenuItem>
-                                <MenuItem value="CANCELLED">Не состоялась</MenuItem>
-                              </Select>
-                            </FormControl>
-                          )}
-                        />
-                    </Grid>
-                    <Grid item xs={6} sm={3} md={2}>
-                        <TextField label="План от" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('planned_date_after')} />
-                    </Grid>
-                    <Grid item xs={6} sm={3} md={2}>
-                        <TextField label="План до" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('planned_date_before')} />
-                    </Grid>
-                </Grid>
-            </Paper>
-
-            <Box sx={{ height: 600, width: '100%' }}>
-                <DataGrid
-                    rows={sortedMeetings}
-                    columns={columns}
-                    onRowClick={(params) => setSelectedMeeting(params.row)}
-                />
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+                    <Tab label="Список встреч" />
+                    <Tab label="Сводная таблица" />
+                </Tabs>
             </Box>
+
+            <TabPanel value={tabValue} index={0}>
+                <Stack spacing={2}>
+                    <Paper sx={{ p: 2 }}>
+                        <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
+                        <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Controller name="client_name" control={control} render={({ field }) => (
+                                        <TextField {...field} onChange={field.onChange} value={field.value || ''} label="Поиск по клиенту" fullWidth size="small" />
+                                    )}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Controller name="executor_id" control={control} render={({ field }) => (
+                                        <Autocomplete
+                                            options={users || []}
+                                            loading={isLoadingUsers}
+                                            getOptionLabel={(option) => `${option.first_name} ${option.last_name}`.trim() || option.username}
+                                            onChange={(_, data) => field.onChange(data?.id || null)}
+                                            renderInput={(params) => <TextField {...params} label="Исполнитель" size="small" />}
+                                        />
+                                    )}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={2}>
+                                <Controller name="status" control={control} render={({ field }) => (
+                                    <FormControl fullWidth size="small">
+                                      <InputLabel>Статус</InputLabel>
+                                      <Select {...field} value={field.value || ''} label="Статус">
+                                        <MenuItem value=""><em>Все</em></MenuItem>
+                                        <MenuItem value="NEW">Новая</MenuItem>
+                                        <MenuItem value="COMPLETED">Состоялась</MenuItem>
+                                        <MenuItem value="CANCELLED">Не состоялась</MenuItem>
+                                      </Select>
+                                    </FormControl>
+                                  )}
+                                />
+                            </Grid>
+                            <Grid item xs={6} sm={3} md={2}>
+                                <TextField label="План от" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('planned_date_after')} />
+                            </Grid>
+                            <Grid item xs={6} sm={3} md={2}>
+                                <TextField label="План до" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('planned_date_before')} />
+                            </Grid>
+                        </Grid>
+                    </Paper>
+
+                    <Box sx={{ height: 600, width: '100%' }}>
+                        <DataGrid
+                            rows={sortedMeetings}
+                            columns={columns}
+                            onRowClick={(params) => setSelectedMeeting(params.row)}
+                        />
+                    </Box>
+                </Stack>
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={1}>
+                <MeetingSummary />
+            </TabPanel>
+
+
             <MeetingDetailModal
                 meeting={selectedMeeting}
                 open={!!selectedMeeting}

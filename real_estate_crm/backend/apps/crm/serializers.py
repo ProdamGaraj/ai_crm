@@ -2,11 +2,19 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import (
     Client, Application, PreciseSource, ClientLog, RejectionReason,
-    ApplicationLog, ClientPhoneNumber, Meeting, MeetingLog
+    ApplicationLog, ClientPhoneNumber, Meeting, MeetingLog, ClientFile
 )
 from apps.realty.serializers import BuildingMiniSerializer
 
 # --- Сериализаторы для Клиентов ---
+
+class ClientFileSerializer(serializers.ModelSerializer):
+    uploaded_by = serializers.StringRelatedField()
+
+    class Meta:
+        model = ClientFile
+        fields = ['id', 'file', 'comment', 'uploaded_at', 'uploaded_by']
+
 
 class ClientListSerializer(serializers.ModelSerializer):
     primary_phone_number = serializers.SerializerMethodField()
@@ -108,6 +116,7 @@ class ClientDetailSerializer(serializers.ModelSerializer):
     logs = ClientLogSerializer(many=True, read_only=True)
     phone_numbers = ClientPhoneNumberSerializer(many=True, required=False)
     meetings = MeetingSerializer(many=True, read_only=True)
+    files = ClientFileSerializer(many=True, read_only=True)
 
     phone_number = serializers.CharField(write_only=True, required=False)
 
@@ -117,9 +126,9 @@ class ClientDetailSerializer(serializers.ModelSerializer):
             'id', 'full_name', 'email', 'date_of_birth', 'gender', 'status',
             'marital_status', 'passport_series', 'passport_number', 'passport_issued_by',
             'passport_issued_date', 'inn', 'pinfl', 'registration_address', 'billing_address',
-            'file_storage_link', 'comment', 'relatives', 'created_at', 'updated_at',
+            'comment', 'relatives', 'created_at', 'updated_at',
             'created_by', 'applications', 'logs', 'phone_numbers',
-            'phone_number', 'meetings'
+            'phone_number', 'meetings', 'files'
         ]
 
     def create(self, validated_data):

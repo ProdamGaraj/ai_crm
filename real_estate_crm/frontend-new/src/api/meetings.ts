@@ -73,3 +73,36 @@ export interface MeetingFilters {
   planned_date_after?: string;
   planned_date_before?: string;
 }
+
+export interface MeetingSummaryFilters {
+    group_by: 'executor' | 'project' | 'status';
+    planned_date_after?: string;
+    planned_date_before?: string;
+    actual_date_after?: string;
+    actual_date_before?: string;
+}
+
+export interface MeetingSummaryResponse {
+    summary: any[];
+    overdue_count: number;
+}
+
+export const getMeetingSummary = async (filters: MeetingSummaryFilters): Promise<MeetingSummaryResponse> => {
+  const response = await apiClient.get('/meetings/summary/', { params: filters });
+  return response.data;
+};
+
+export const downloadMeetingSummary = async (filters: MeetingSummaryFilters) => {
+    const response = await apiClient.get('/meetings/summary/', {
+        params: { ...filters, format: 'excel' },
+        responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `meeting_summary_${filters.group_by}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+};

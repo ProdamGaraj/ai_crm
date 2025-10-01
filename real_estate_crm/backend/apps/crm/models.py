@@ -184,7 +184,6 @@ class Client(models.Model):
     # --- Адреса и прочее ---
     registration_address = models.TextField(blank=True, verbose_name="Адрес прописки")
     billing_address = models.TextField(blank=True, verbose_name="Расчетный адрес")  # ДОБАВЛЕНО
-    file_storage_link = models.URLField(blank=True, verbose_name="Ссылка на хранилище файлов")  # ДОБАВЛЕНО
     comment = models.TextField(blank=True, verbose_name="Комментарий")  # ДОБАВЛЕНО
 
     # --- Связи ---
@@ -208,6 +207,19 @@ class Client(models.Model):
 
     def __str__(self):
         return self.full_name
+
+
+class ClientFile(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='files', verbose_name="Клиент")
+    file = models.FileField(upload_to='client_files/', verbose_name="Файл")
+    comment = models.TextField(blank=True, verbose_name="Комментарий")
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата загрузки")
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="Кем загружен")
+
+    class Meta:
+        verbose_name = "Файл клиента"
+        verbose_name_plural = "Файлы клиента"
+        ordering = ['-uploaded_at']
 
 
 class ClientLog(models.Model):
@@ -301,4 +313,3 @@ class MeetingLog(models.Model):
 
     def __str__(self):
         return f"Лог для встречи №{self.meeting.id}"
-

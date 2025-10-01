@@ -20,7 +20,10 @@ import DiscountDetailPage from './pages/DiscountDetailPage';
 import MeetingsPage from './pages/MeetingsPage';
 import FinancesPage from './pages/FinancesPage';
 import PaymentDetailPage from './pages/PaymentDetailPage';
-import ReportsPage from './pages/ReportsPage'; // <-- Добавьте этот импорт
+import ReportsPage from './pages/ReportsPage';
+// Permissions pages
+import CompanyDetailPage from './pages/permissions/CompanyDetailPage';
+import RoleDetailPage from './pages/permissions/RoleDetailPage';
 
 // Компонент-обертка для защиты маршрутов
 const ProtectedRoute = () => {
@@ -57,10 +60,13 @@ const router = createBrowserRouter([
           { path: 'projects/:projectId/buildings/:buildingId', element: <BuildingDetailPage /> },
           { path: 'finances', element: <FinancesPage /> },
           { path: 'finances/:paymentId', element: <PaymentDetailPage /> },
-          { path: 'reports', element: <ReportsPage /> }, // <-- Добавьте эту строку
+          { path: 'reports', element: <ReportsPage /> },
           { path: 'settings', element: <SettingsPage /> },
           { path: 'discounts', element: <DiscountsPage /> },
           { path: 'discounts/:discountId', element: <DiscountDetailPage /> },
+          // Permissions routes
+          { path: 'permissions/companies/:id', element: <CompanyDetailPage /> },
+          { path: 'permissions/roles/:id', element: <RoleDetailPage /> },
         ],
       },
     ],

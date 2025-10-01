@@ -20,6 +20,8 @@ from apps.deals.models import Deal
 from apps.finances.models import Payment
 import pandas as pd
 from django.http import HttpResponse
+from permissions.permissions import ClientPermission, ApplicationPermission, MeetingPermission
+from permissions.backends import get_filtered_queryset
 
 
 class ApplicationSummaryView(APIView):
@@ -294,9 +296,13 @@ class RejectionReasonListView(generics.ListCreateAPIView):
 
 
 class ClientListView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ClientPermission]
     queryset = Client.objects.all()
     filterset_class = ClientFilter
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return get_filtered_queryset(self.request.user, queryset, 'CLIENT')
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -326,9 +332,13 @@ class ClientListView(generics.ListCreateAPIView):
 
 
 class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ClientPermission]
     queryset = Client.objects.prefetch_related('phone_numbers').all()
     serializer_class = ClientDetailSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return get_filtered_queryset(self.request.user, queryset, 'CLIENT')
 
     def perform_update(self, serializer):
         old_instance = self.get_object()
@@ -360,8 +370,12 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class ApplicationListView(generics.ListCreateAPIView):
     queryset = Application.objects.select_related('client', 'precise_source', 'created_by').all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ApplicationPermission]
     filterset_class = ApplicationFilter
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return get_filtered_queryset(self.request.user, queryset, 'APPLICATION')
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -384,7 +398,11 @@ class RejectionReasonDetailView(generics.RetrieveUpdateAPIView):
 class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Application.objects.all()
     serializer_class = ApplicationDetailSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ApplicationPermission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return get_filtered_queryset(self.request.user, queryset, 'APPLICATION')
 
     def perform_update(self, serializer):
         old_instance = self.get_object()
@@ -434,17 +452,16 @@ class PublicApplicationCreateView(generics.CreateAPIView):
 # --- Views для Встреч ---
 class MeetingListCreateView(generics.ListCreateAPIView):
     serializer_class = MeetingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, MeetingPermission]
 
     def get_queryset(self):
         client_id = self.request.query_params.get('client_id')
-        if client_id:
-            return Meeting.objects.filter(client_id=client_id).select_related(
-                'client', 'creator', 'executor', 'interested_building'
-            )
-        return Meeting.objects.all().select_related(
+        queryset = Meeting.objects.all().select_related(
             'client', 'creator', 'executor', 'interested_building'
         )
+        if client_id:
+            queryset = queryset.filter(client_id=client_id)
+        return get_filtered_queryset(self.request.user, queryset, 'MEETING')
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
@@ -453,7 +470,11 @@ class MeetingListCreateView(generics.ListCreateAPIView):
 class MeetingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Meeting.objects.all()
     serializer_class = MeetingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, MeetingPermission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return get_filtered_queryset(self.request.user, queryset, 'MEETING')
 
     def perform_update(self, serializer):
         instance = serializer.save()
@@ -468,18 +489,3 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
-
-
-# --- Views для Встреч ---
-class MeetingListCreateView(generics.ListCreateAPIView):
-    serializer_class = MeetingSerializer
-    permission_classes = [IsAuthenticated]
-    filterset_class = MeetingFilter
-
-    def get_queryset(self):
-        return Meeting.objects.all().select_related(
-            'client', 'creator', 'executor', 'interested_building'
-        )
-
-    def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'apps.documents.apps.DocumentsConfig',
     'django_filters',
     'apps.reports',
+    'permissions',  # Система разрешений и ролей
 ]
 
 MIDDLEWARE = [
@@ -148,6 +149,12 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend'
     ],
 }
+
+# Кастомный backend для проверки разрешений
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Стандартный backend
+    'permissions.backends.PermissionBackend',  # Наш кастомный backend
+]
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),      # access-токен будет жить 1 час
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),       # refresh-токен будет жить 7 дней

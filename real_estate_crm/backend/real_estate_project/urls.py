@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/', include('apps.finances.urls')),
     path('api/', include('apps.documents.urls')),
     path('api/', include('apps.reports.urls')),
+    path('api/permissions/', include('permissions.urls')),  # Система разрешений
 
 
     # Эндпоинты для JWT токенов

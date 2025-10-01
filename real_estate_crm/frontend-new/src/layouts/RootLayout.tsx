@@ -9,8 +9,9 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import PaymentsIcon from '@mui/icons-material/Payments'; // <-- ДОБАВЬТЕ ЭТОТ ИМПОРТ
+import PaymentsIcon from '@mui/icons-material/Payments';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+
 const drawerWidth = 240;
 
 const navItems = [
@@ -20,10 +21,10 @@ const navItems = [
   { text: 'Встречи', icon: <EventIcon />, path: '/meetings' },
   { text: 'Сделки', icon: <BusinessCenterIcon />, path: '/deals' },
   { text: 'Проекты', icon: <AccountBalanceIcon />, path: '/projects' },
-  { text: 'Финансы', icon: <PaymentsIcon />, path: '/finances' }, // <-- ДОБАВЬТЕ ЭТУ СТРОКУ
+  { text: 'Финансы', icon: <PaymentsIcon />, path: '/finances' },
   { text: 'Отчеты', icon: <AssessmentIcon />, path: '/reports' },
   { text: 'Скидки', icon: <LocalOfferIcon />, path: '/discounts' },
-  { text: 'Настройки', icon: <SettingsIcon />, path: '/settings' },
+  { text: 'Настройки', icon: <SettingsIcon />, path: '/settings?tab=companies' },
 ];
 
 export default function RootLayout() {

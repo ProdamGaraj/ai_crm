@@ -16,6 +16,8 @@ from .filters import DealFilter
 from apps.finances.models import Payment
 import pandas as pd
 from django.http import HttpResponse
+from permissions.permissions import DealPermission
+from permissions.backends import get_filtered_queryset
 
 
 class DealSummaryView(APIView):
@@ -88,7 +90,7 @@ class DealSummaryView(APIView):
 
 
 class DealListView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, DealPermission]
     filterset_class = DealFilter
 
     def get_serializer_class(self):
@@ -98,7 +100,7 @@ class DealListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         # Аннотируем queryset для специальной сортировки
-        return Deal.objects.annotate(
+        queryset = Deal.objects.annotate(
             has_payments=Count('payments'),
             is_terminated_with_payments=Case(
                 When(status=Deal.DealStatus.TERMINATED, has_payments__gt=0, then=True),
@@ -106,6 +108,7 @@ class DealListView(generics.ListCreateAPIView):
                 output_field=BooleanField()
             )
         ).select_related('client', 'property', 'created_by').order_by('-is_terminated_with_payments', '-created_at')
+        return get_filtered_queryset(self.request.user, queryset, 'DEAL')
 
     def create(self, request, *args, **kwargs):
         serializer = DealCreateSerializer(data=request.data)
@@ -144,7 +147,7 @@ class DealCancelOrTerminateView(APIView):
     """
     View для отмены или расторжения сделки.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, DealPermission]
     parser_classes = [MultiPartParser]  # Для загрузки файлов
 
     def post(self, request, deal_pk, *args, **kwargs):
@@ -207,7 +210,11 @@ class DealDetailView(generics.RetrieveUpdateAPIView):
     queryset = Deal.objects.select_related('client', 'property', 'created_by').prefetch_related('applied_discounts',
                                                                                                 'logs')
     serializer_class = DealDetailSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, DealPermission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return get_filtered_queryset(self.request.user, queryset, 'DEAL')
 
     def perform_update(self, serializer):
         old_instance = self.get_object()

@@ -43,7 +43,6 @@ class RejectionReason(models.Model):
 
     name = models.CharField(max_length=255, verbose_name="Причина")
     reason_type = models.CharField(max_length=10, choices=ReasonType.choices, verbose_name="Тип причины")
-    reason_type = models.CharField(max_length=10, choices=ReasonType.choices, verbose_name="Тип причины")
     is_active = models.BooleanField(default=True, verbose_name="Активна")
 
 

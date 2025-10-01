@@ -18,6 +18,10 @@ import DealDetailPage from './pages/DealDetailPage';
 import DiscountsPage from './pages/DiscountsPage';
 import DiscountDetailPage from './pages/DiscountDetailPage';
 import MeetingsPage from './pages/MeetingsPage';
+import FinancesPage from './pages/FinancesPage';
+import PaymentDetailPage from './pages/PaymentDetailPage';
+import ReportsPage from './pages/ReportsPage'; // <-- Добавьте этот импорт
+
 // Компонент-обертка для защиты маршрутов
 const ProtectedRoute = () => {
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
@@ -49,10 +53,11 @@ const router = createBrowserRouter([
           { path: 'deals', element: <DealsPage /> },
           { path: 'deals/:dealId', element: <DealDetailPage /> },
           { path: 'projects', element: <ProjectsPage /> },
-          // ИСПРАВЛЕНИЕ: Этот маршрут должен быть здесь, внутри children
           { path: 'projects/:projectId', element: <ProjectDetailPage /> },
           { path: 'projects/:projectId/buildings/:buildingId', element: <BuildingDetailPage /> },
-          { path: 'settings', element: <SettingsPage /> },
+          { path: 'finances', element: <FinancesPage /> },
+          { path: 'finances/:paymentId', element: <PaymentDetailPage /> },
+          { path: 'reports', element: <ReportsPage /> }, // <-- Добавьте эту строку
           { path: 'settings', element: <SettingsPage /> },
           { path: 'discounts', element: <DiscountsPage /> },
           { path: 'discounts/:discountId', element: <DiscountDetailPage /> },

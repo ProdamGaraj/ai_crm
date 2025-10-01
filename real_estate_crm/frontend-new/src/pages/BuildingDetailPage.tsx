@@ -13,9 +13,9 @@ import apiClient from '../api/axios';
 
 import { styled } from '@mui/material/styles';
 import {
-  Box, CircularProgress, Paper, Typography, ToggleButtonGroup, ToggleButton, Alert, Link as MuiLink,
-  Stack, Button, Tabs, Tab, Grid, TextField, FormControl, InputLabel, Select, MenuItem,
-  Card, CardMedia, CardActions, IconButton
+    Box, CircularProgress, Paper, Typography, ToggleButtonGroup, ToggleButton, Alert, Link as MuiLink,
+    Stack, Button, Tabs, Tab, Grid, TextField, FormControl, InputLabel, Select, MenuItem,
+    Card, CardMedia, CardActions, IconButton, CardHeader, CardContent
 } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot } from '@mui/lab';
@@ -24,6 +24,8 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile'; // <-- НОВЫЙ ИМПОРТ
+import BusinessIcon from '@mui/icons-material/Business';
+import StarIcon from '@mui/icons-material/Star';
 
 import Chessboard from '../components/buildings/Chessboard';
 import LayoutsTab from '../components/buildings/LayoutsTab';
@@ -203,14 +205,16 @@ export default function BuildingDetailPage() {
   ];
 
   return (
-    <Paper>
-      <Typography variant="h4" sx={{ p: 3, pb: 1 }}>{building.name}</Typography>
-      <Typography color="text.secondary" sx={{ px: 3 }}>
-        Проект: <MuiLink component={RouterLink} to={`/projects/${projectId}`} underline="hover">{building.project.name}</MuiLink>
-      </Typography>
+    <Stack spacing={3}>
+      <Paper sx={{ p: 2 }}>
+        <Typography variant="h4">{building.name}</Typography>
+        <Typography color="text.secondary">
+          Проект: <MuiLink component={RouterLink} to={`/projects/${projectId}`} underline="hover">{building.project.name}</MuiLink>
+        </Typography>
+      </Paper>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
-        <Tabs value={tabValue} onChange={(_, newVal) => setTabValue(newVal)}>
+      <Box>
+        <Tabs value={tabValue} onChange={(_, newVal) => setTabValue(newVal)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tab label="Детали дома" />
           <Tab label={`Объекты (${building?.properties?.length ?? 0})`} />
           <Tab label="Планировки" />
@@ -223,36 +227,52 @@ export default function BuildingDetailPage() {
       <TabPanel value={tabValue} index={0}>
         <form onSubmit={handleSubmit((data) => updateMutation.mutate(data))}>
           <Stack spacing={3}>
-            <Grid container spacing={2}>
-                <Grid xs={12} md={4}><TextField fullWidth label="Название/Номер" {...register('name')} /></Grid>
-                <Grid xs={12} md={6}><TextField label="Плановая дата кадастра" type="date" InputLabelProps={{ shrink: true }} {...register('cadastre_date_plan')} /></Grid>
-                <Grid xs={12} md={4}>
-                    <Controller name="status" control={control} defaultValue={building.status || ''} render={({ field }) => (
-                        <FormControl fullWidth><InputLabel>Статус</InputLabel>
-                        <Select {...field} label="Статус">
-                            <MenuItem value="UNDER_REVIEW">На проверке</MenuItem>
-                            <MenuItem value="FOR_SALE">В продаже</MenuItem>
-                            <MenuItem value="COMPLETED">Сдан</MenuItem>
-                            <MenuItem value="ARCHIVED">В архиве</MenuItem>
-                        </Select></FormControl>
-                    )}/>
-                </Grid>
-                <Grid xs={12} md={4}>
-                    <Controller name="building_type_id" control={control} defaultValue={building.building_type?.id || ''} render={({ field }) => (
-                        <FormControl fullWidth><InputLabel>Тип дома</InputLabel>
-                        <Select {...field} label="Тип дома">
-                            {buildingTypes?.map(bt => <MenuItem key={bt.id} value={bt.id}>{bt.name}</MenuItem>)}
-                        </Select></FormControl>
-                    )}/>
-                </Grid>
-                <Grid xs={12} md={4}><TextField fullWidth label="Кол-во этажей" type="number" {...register('floors_count')} /></Grid>
-                <Grid xs={12} md={4}><TextField fullWidth label="Высота потолков (м)" {...register('ceiling_height')} /></Grid>
-                <Grid xs={12} md={4}><TextField fullWidth label="Материал" {...register('material')} /></Grid>
-                <Grid xs={12} md={6}><TextField fullWidth label="УТП 1" {...register('usp_1')} /></Grid>
-                <Grid xs={12} md={6}><TextField fullWidth label="УТП 2" {...register('usp_2')} /></Grid>
-                <Grid xs={12} md={6}><TextField label="Дата старта продаж" type="date" InputLabelProps={{ shrink: true }} {...register('sales_start_date')} /></Grid>
-            </Grid>
-            <Box><Button type="submit" variant="contained" disabled={updateMutation.isPending}>Сохранить</Button></Box>
+            <Card variant="outlined">
+                <CardHeader title="Основная информация" avatar={<BusinessIcon />} />
+                <CardContent>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} md={4}><TextField fullWidth label="Название/Номер" {...register('name')} /></Grid>
+                        <Grid item xs={12} md={6}><TextField fullWidth label="Плановая дата кадастра" type="date" InputLabelProps={{ shrink: true }} {...register('cadastre_date_plan')} /></Grid>
+                        <Grid item xs={12} md={4}>
+                            <Controller name="status" control={control} defaultValue={building.status || ''} render={({ field }) => (
+                                <FormControl fullWidth><InputLabel>Статус</InputLabel>
+                                <Select {...field} label="Статус">
+                                    <MenuItem value="UNDER_REVIEW">На проверке</MenuItem>
+                                    <MenuItem value="FOR_SALE">В продаже</MenuItem>
+                                    <MenuItem value="COMPLETED">Сдан</MenuItem>
+                                    <MenuItem value="ARCHIVED">В архиве</MenuItem>
+                                </Select></FormControl>
+                            )}/>
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                            <Controller name="building_type_id" control={control} defaultValue={building.building_type?.id || ''} render={({ field }) => (
+                                <FormControl fullWidth><InputLabel>Тип дома</InputLabel>
+                                <Select {...field} label="Тип дома">
+                                    {buildingTypes?.map(bt => <MenuItem key={bt.id} value={bt.id}>{bt.name}</MenuItem>)}
+                                </Select></FormControl>
+                            )}/>
+                        </Grid>
+                        <Grid item xs={12} md={4}><TextField fullWidth label="Кол-во этажей" type="number" {...register('floors_count')} /></Grid>
+                        <Grid item xs={12} md={4}><TextField fullWidth label="Высота потолков (м)" {...register('ceiling_height')} /></Grid>
+                        <Grid item xs={12} md={4}><TextField fullWidth label="Материал" {...register('material')} /></Grid>
+                        <Grid item xs={12} md={6}><TextField fullWidth label="Дата старта продаж" type="date" InputLabelProps={{ shrink: true }} {...register('sales_start_date')} /></Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
+
+            <Card variant="outlined">
+                <CardHeader title="Уникальные торговые предложения (УТП)" avatar={<StarIcon />} />
+                <CardContent>
+                     <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}><TextField fullWidth label="УТП 1" {...register('usp_1')} /></Grid>
+                        <Grid item xs={12} md={6}><TextField fullWidth label="УТП 2" {...register('usp_2')} /></Grid>
+                    </Grid>
+                </CardContent>
+            </Card>
+
+            <Box>
+                <Button type="submit" variant="contained" disabled={updateMutation.isPending}>Сохранить</Button>
+            </Box>
           </Stack>
         </form>
       </TabPanel>
@@ -394,6 +414,6 @@ export default function BuildingDetailPage() {
         open={!!selectedProperty}
         onClose={() => setSelectedProperty(null)}
       />
-    </Paper>
+    </Stack>
   );
 }

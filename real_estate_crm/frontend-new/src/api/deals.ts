@@ -31,6 +31,27 @@ export interface Deal {
   termination_date: string | null;
   logs: DealLog[];
 }
+
+export interface DealListItem {
+    id: number;
+    status: string;
+    client: string;
+    property: string;
+    contract_price: string | null;
+    created_by: string | null;
+    created_at: string;
+}
+
+export interface DealFilters {
+    client_name?: string;
+    property_id?: number | null;
+    created_by_id?: number | null;
+    status?: string;
+    contract_date_after?: string;
+    contract_date_before?: string;
+}
+
+
 export interface DealCancellationPayload {
   cancellation_reason?: string;
   termination_document_scan?: File;
@@ -138,3 +159,48 @@ export interface DealLog {
   action: string;
   created_at: string;
 }
+
+export const getDeals = async (filters: DealFilters): Promise<DealListItem[]> => {
+    const params = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v != null && v !== '')
+    );
+    const response = await apiClient.get('/deals/', { params });
+    return response.data;
+};
+
+export interface DealSummaryFilters {
+    group_by: 'created_by' | 'project' | 'status';
+    created_at_after?: string;
+    created_at_before?: string;
+}
+
+export interface DealSummaryResponse {
+    summary: any[];
+    widgets: {
+        booking_count: number;
+        in_progress_count: number;
+        closed_won_count: number;
+        terminated_count: number;
+        cancelled_count: number;
+    };
+}
+
+export const getDealSummary = async (filters: DealSummaryFilters): Promise<DealSummaryResponse> => {
+    const response = await apiClient.get('/deals/summary/', { params: filters });
+    return response.data;
+};
+
+export const downloadDealSummary = async (filters: DealSummaryFilters) => {
+    const response = await apiClient.get('/deals/summary/', {
+        params: { ...filters, format: 'excel' },
+        responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `deal_summary_${filters.group_by}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+};

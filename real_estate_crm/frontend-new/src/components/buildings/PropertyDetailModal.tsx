@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Dialog, DialogTitle, DialogContent, Typography, Box, TextField, Button,
-  Stack, CircularProgress, MobileStepper, Paper // MobileStepper для слайдера
+  Stack, CircularProgress, MobileStepper, Paper, Grid, Divider
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import type { Property } from '../../api/buildings';
@@ -27,10 +27,8 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
   const { register, handleSubmit, setValue } = useForm<{ description: string }>();
 
-  // Состояние для слайдера
   const [activeStep, setActiveStep] = useState(0);
 
-  // Собираем все картинки планировки в один массив
   const layoutImages = useMemo(() => {
     if (!property?.layout) return [];
     const images = [
@@ -39,13 +37,11 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
       property.layout.floor_plan_image,
       property.layout.usp_image,
     ];
-    // Отфильтровываем пустые значения
     return images.filter(Boolean) as string[];
   }, [property]);
 
   const maxSteps = layoutImages.length;
 
-  // Сбрасываем шаг при открытии/смене объекта
   useEffect(() => {
     if (open) {
       setActiveStep(0);
@@ -98,12 +94,12 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
 
   return (
     <>
-      <Dialog open={open && !isBookingModalOpen} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogTitle>Объект №{property.unit_number}</DialogTitle>
+      <Dialog open={open && !isBookingModalOpen} onClose={onClose} maxWidth="lg" fullWidth>
+        <DialogTitle>Объект №{property.unit_number} ({property.property_type})</DialogTitle>
         <DialogContent>
-          <Stack direction={{xs: 'column', md: 'row'}} spacing={3} sx={{ mt: 1 }}>
-            {/* === БЛОК С ИЗОБРАЖЕНИЕМ ЗАМЕНЕН НА СЛАЙДЕР === */}
-            <Box flex={1}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+
+            <Grid item xs={12} md={6}>
                 {maxSteps > 0 ? (
                     <Box sx={{ flexGrow: 1 }}>
                         <Paper
@@ -117,12 +113,12 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
                                 bgcolor: 'background.default',
                             }}
                         >
-                            <Typography>Планировка {activeStep + 1}/{maxSteps}</Typography>
+                            <Typography>{property.layout?.name} {activeStep + 1}/{maxSteps}</Typography>
                         </Paper>
                         <Box
                             component="img"
                             sx={{
-                                height: 300,
+                                height: 400,
                                 display: 'block',
                                 width: '100%',
                                 objectFit: 'contain',
@@ -151,25 +147,34 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
                      <Box
                         component="img"
                         sx={{
-                            height: 300,
-                            display: 'block',
+                            height: 400,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             width: '100%',
                             objectFit: 'contain',
                             overflow: 'hidden',
                             borderRadius: 2,
                             bgcolor: 'grey.200'
                         }}
-                        src={'https://placehold.co/400x300/eee/ccc?text=No+Image'}
+                        src={'https://placehold.co/600x400/eee/ccc?text=No+Image'}
                         alt="Нет изображения"
                     />
                 )}
-            </Box>
+            </Grid>
 
-            <Box flex={1}>
+            <Grid item xs={12} md={6}>
               <Typography variant="h6">Детали</Typography>
-              <Typography>Статус: {property.status}</Typography>
-              <Typography>Площадь: {property.area} м²</Typography>
-              <Typography>Цена: {Number(property.price).toLocaleString()} у.е.</Typography>
+              <Stack spacing={1} sx={{mb:2}}>
+                <Typography><b>Статус:</b> {property.status}</Typography>
+                <Typography><b>Площадь:</b> {property.area} м²</Typography>
+                <Typography><b>Цена:</b> {Number(property.price).toLocaleString()} у.е.</Typography>
+                <Divider/>
+                <Typography><b>Этаж:</b> {property.floor}</Typography>
+                <Typography><b>Подъезд:</b> {property.entrance || 'N/A'}</Typography>
+                <Typography><b>Стояк:</b> {property.riser || 'N/A'}</Typography>
+                <Typography><b>Отделка:</b> {property.has_finishing ? 'Да' : 'Нет'}</Typography>
+              </Stack>
 
               <Stack direction="row" spacing={2} sx={{ mt: 2, mb: 2, flexWrap: 'wrap' }}>
                 {property.active_deal_id ? (
@@ -205,8 +210,8 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
                   {updatePropMutation.isPending ? <CircularProgress size={24} /> : 'Сохранить комментарий'}
                 </Button>
               </Box>
-            </Box>
-          </Stack>
+            </Grid>
+          </Grid>
         </DialogContent>
       </Dialog>
 

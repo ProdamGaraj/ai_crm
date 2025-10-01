@@ -25,6 +25,8 @@ export interface Property {
   price: number;
   floor: number;
   entrance: number;
+  riser: string;
+  has_finishing: boolean;
   layout: LayoutMini | null;
   description: string | null;
   active_deal_id: number | null;

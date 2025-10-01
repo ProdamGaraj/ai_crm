@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
-import { getPaymentTypes, getBeneficiaryAccounts, createPaymentSchedule, updatePayment } from '../../api/finances';
+import { getPaymentTypes, getBeneficiaryAccounts, createPaymentSchedule, updatePayment, markPaymentAsReturned } from '../../api/finances';
 import type { Payment, PaymentSchedulePayloadItem } from '../../api/finances';
 
 import {
@@ -13,19 +13,33 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
+import UndoIcon from '@mui/icons-material/Undo';
 import { useMemo, useState, useEffect } from 'react';
 
 interface PaymentScheduleProps {
   dealId: number;
   contractPrice: number;
   existingPayments: Payment[];
+  isDealTerminated: boolean;
+  isReadOnly: boolean;
 }
 
 interface FormValues {
   payments: PaymentSchedulePayloadItem[];
 }
 
-export default function PaymentSchedule({ dealId, contractPrice, existingPayments }: PaymentScheduleProps) {
+const getStatusChipColor = (status: Payment['status']) => {
+    switch (status) {
+        case 'PAID': return 'success';
+        case 'OVERDUE': return 'error';
+        case 'TO_BE_RETURNED': return 'warning';
+        case 'RETURNED': return 'info';
+        default: return 'default';
+    }
+}
+
+
+export default function PaymentSchedule({ dealId, contractPrice, existingPayments, isDealTerminated, isReadOnly }: PaymentScheduleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
 
@@ -84,6 +98,14 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['deal', String(dealId)] })
   });
 
+  const returnPaymentMutation = useMutation({
+    mutationFn: markPaymentAsReturned,
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['deal', String(dealId)] });
+    }
+  });
+
+
   const handleMarkAsPaid = (paymentId: number) => {
     const today = new Date().toISOString().split('T')[0];
     updatePaymentMutation.mutate({ id: paymentId, payload: { payment_date: today } });
@@ -97,7 +119,7 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
     return (
         <Stack spacing={2}>
             <Box>
-                <Button startIcon={<EditIcon />} onClick={handleEditClick}>Редактировать график</Button>
+                <Button startIcon={<EditIcon />} onClick={handleEditClick} disabled={isReadOnly}>Редактировать график</Button>
             </Box>
             <TableContainer component={Paper}>
                 <Table>
@@ -116,14 +138,18 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
                             <TableCell>{payment.amount} {payment.currency}</TableCell>
                             <TableCell>{new Date(payment.due_date).toLocaleDateString()}</TableCell>
                             <TableCell>
-                                <Chip label={payment.get_status_display} color={payment.get_status_display === 'Оплачен' ? 'success' : payment.get_status_display === 'Просрочен' ? 'error' : 'default'} size="small"/>
+                                <Chip label={payment.status_display} color={getStatusChipColor(payment.status)} size="small"/>
                             </TableCell>
                             <TableCell>{payment.payment_type}</TableCell>
                             <TableCell align="right">
-                                {payment.get_status_display !== 'Оплачен' ? (
+                                {!isDealTerminated && payment.status !== 'PAID' && (
                                     <Button startIcon={<CheckCircleOutlineIcon />} size="small" onClick={() => handleMarkAsPaid(payment.id)} disabled={updatePaymentMutation.isPending}>Оплачен</Button>
-                                ) : (
+                                )}
+                                {!isDealTerminated && payment.status === 'PAID' && (
                                     <Button startIcon={<CloseIcon />} size="small" color="secondary" onClick={() => handleCancelPayment(payment.id)} disabled={updatePaymentMutation.isPending}>Отменить</Button>
+                                )}
+                                {isDealTerminated && payment.status === 'TO_BE_RETURNED' && (
+                                    <Button startIcon={<UndoIcon />} size="small" color="warning" onClick={() => returnPaymentMutation.mutate(payment.id)} disabled={returnPaymentMutation.isPending}>Вернуть</Button>
                                 )}
                             </TableCell>
                         </TableRow>

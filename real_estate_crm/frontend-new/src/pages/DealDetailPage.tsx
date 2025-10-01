@@ -121,6 +121,7 @@ export default function DealDetailPage() {
   if (isError || !deal) return <Alert severity="error">Не удалось загрузить данные сделки.</Alert>;
 
   const isDealReadOnly = ['CLOSED_WON', 'CANCELLED', 'TERMINATED'].includes(deal.status);
+  const isDealTerminated = deal.status === 'TERMINATED';
 
   return (
     <>
@@ -154,7 +155,7 @@ export default function DealDetailPage() {
                     )}
                 </Alert>
             )}
-      <fieldset disabled={isDealReadOnly} style={{ border: 'none', padding: 0, margin: 0 }}>
+
         <Paper>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={mainTabValue} onChange={(_, newValue) => setMainTabValue(newValue)}>
@@ -180,7 +181,7 @@ export default function DealDetailPage() {
                               <Typography><b>Окончание брони:</b> {new Date(deal.booking_end_date).toLocaleString()}</Typography>
                           </Grid>
                       </Grid>
-                      <Button onClick={() => setActiveStep(1)} variant="contained" sx={{mt: 2}}>Далее</Button>
+                      <Button onClick={() => setActiveStep(1)} variant="contained" sx={{mt: 2}} disabled={isDealReadOnly}>Далее</Button>
                     </StepContent>
                   </Step>
 
@@ -192,13 +193,13 @@ export default function DealDetailPage() {
                         <Grid container spacing={3}>
                           <Grid item xs={12} sm={6} md={3}><TextField label="Стоимость (начальная)" value={Number(deal.initial_price).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
                           <Grid item xs={12} sm={6} md={3}><TextField label="Цена за м² (начальная)" value={Number(deal.initial_price_per_sqm).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
-                          <Grid item xs={12} sm={6} md={3}><TextField label="Стоимость по договору" type="number" fullWidth {...register('contract_price')} /></Grid>
-                          <Grid item xs={12}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)}>Применить скидки</Button> <Typography component="span">Применено: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || 'нет'}</Typography></Grid>
-                          <Grid item xs={12}><TextField label="Примечание к сделке" multiline rows={4} fullWidth {...register('notes')} /></Grid>
+                          <Grid item xs={12} sm={6} md={3}><TextField label="Стоимость по договору" type="number" fullWidth {...register('contract_price')} disabled={isDealReadOnly} /></Grid>
+                          <Grid item xs={12}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>Применить скидки</Button> <Typography component="span">Применено: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || 'нет'}</Typography></Grid>
+                          <Grid item xs={12}><TextField label="Примечание к сделке" multiline rows={4} fullWidth {...register('notes')} disabled={isDealReadOnly} /></Grid>
                         </Grid>
                         <Stack direction="row" spacing={2} sx={{mt: 2}}>
-                          <Button type="submit" variant="contained" disabled={updateDealMutation.isPending}>Сохранить и перейти к графику</Button>
-                          <Button onClick={() => setActiveStep(0)}>Назад</Button>
+                          <Button type="submit" variant="contained" disabled={updateDealMutation.isPending || isDealReadOnly}>Сохранить и перейти к графику</Button>
+                          <Button onClick={() => setActiveStep(0)} disabled={isDealReadOnly}>Назад</Button>
                         </Stack>
                       </form>
                     </StepContent>
@@ -208,10 +209,18 @@ export default function DealDetailPage() {
                   <Step>
                     <StepLabel onClick={() => deal.contract_price && setActiveStep(2)} error={!deal.contract_price} sx={{cursor: 'pointer'}}>График платежей</StepLabel>
                     <StepContent>
-                       {deal.contract_price ? (<PaymentSchedule dealId={deal.id} contractPrice={Number(deal.contract_price)} existingPayments={deal.payments || []} />) : <Alert severity="warning">Сначала сохраните "Стоимость по договору" на предыдущем шаге.</Alert>}
+                       {deal.contract_price ? (
+                        <PaymentSchedule
+                            dealId={deal.id}
+                            contractPrice={Number(deal.contract_price)}
+                            existingPayments={deal.payments || []}
+                            isDealTerminated={isDealTerminated}
+                            isReadOnly={isDealReadOnly}
+                        />
+                        ) : <Alert severity="warning">Сначала сохраните "Стоимость по договору" на предыдущем шаге.</Alert>}
                       <Stack direction="row" spacing={2} sx={{mt: 2}}>
-                          <Button onClick={() => setActiveStep(1)}>Назад</Button>
-                          <Button variant="contained" onClick={() => setActiveStep(3)} disabled={!deal.payments || deal.payments.length === 0}>Далее</Button>
+                          <Button onClick={() => setActiveStep(1)} disabled={isDealReadOnly}>Назад</Button>
+                          <Button variant="contained" onClick={() => setActiveStep(3)} disabled={!deal.payments || deal.payments.length === 0 || isDealReadOnly}>Далее</Button>
                       </Stack>
                     </StepContent>
                   </Step>
@@ -223,8 +232,8 @@ export default function DealDetailPage() {
                       <form onSubmit={handleSubmit(handleFormSubmit)}>
                           <Typography variant="h6" gutterBottom>Данные договора</Typography>
                           <Grid container spacing={2} sx={{mb: 2}}>
-                              <Grid item xs={12} md={6}><TextField fullWidth label="Номер договора" {...register('contract_number')} /></Grid>
-                              <Grid item xs={12} md={6}><TextField fullWidth label="Дата договора" type="date" InputLabelProps={{ shrink: true }} {...register('contract_date')} /></Grid>
+                              <Grid item xs={12} md={6}><TextField fullWidth label="Номер договора" {...register('contract_number')} disabled={isDealReadOnly} /></Grid>
+                              <Grid item xs={12} md={6}><TextField fullWidth label="Дата договора" type="date" InputLabelProps={{ shrink: true }} {...register('contract_date')} disabled={isDealReadOnly}/></Grid>
                           </Grid>
                           <Divider sx={{my: 3}}/>
 
@@ -237,15 +246,15 @@ export default function DealDetailPage() {
                                   <Typography variant="h6" gutterBottom>Подписанные документы</Typography>
                                   {deal.signed_document_scan && (<Alert severity="success" sx={{mb: 2}}>Подписанный документ загружен. <MuiLink href={deal.signed_document_scan} target="_blank" rel="noopener noreferrer">Посмотреть</MuiLink></Alert>)}
                                   <Grid container spacing={2} sx={{mb: 2}}>
-                                      <Grid item xs={12} md={4}><TextField fullWidth label="Загрузить скан" type="file" InputLabelProps={{ shrink: true }} {...register('signed_document_scan')} /></Grid>
-                                      <Grid item xs={12} md={4}><TextField fullWidth label="Дата подписания клиентом" type="date" InputLabelProps={{ shrink: true }} {...register('client_signature_date')} /></Grid>
-                                      <Grid item xs={12} md={4}><TextField fullWidth label="Дата подписания компанией" type="date" InputLabelProps={{ shrink: true }} {...register('company_signature_date')} /></Grid>
+                                      <Grid item xs={12} md={4}><TextField fullWidth label="Загрузить скан" type="file" InputLabelProps={{ shrink: true }} {...register('signed_document_scan')} disabled={isDealReadOnly} /></Grid>
+                                      <Grid item xs={12} md={4}><TextField fullWidth label="Дата подписания клиентом" type="date" InputLabelProps={{ shrink: true }} {...register('client_signature_date')} disabled={isDealReadOnly} /></Grid>
+                                      <Grid item xs={12} md={4}><TextField fullWidth label="Дата подписания компанией" type="date" InputLabelProps={{ shrink: true }} {...register('company_signature_date')} disabled={isDealReadOnly} /></Grid>
                                   </Grid>
                               </>
                           )}
                           <Stack direction="row" spacing={2} sx={{mt: 2}}>
-                             <Button type="submit" variant="contained" disabled={updateDealMutation.isPending}>{updateDealMutation.isPending ? 'Сохранение...' : 'Сохранить данные'}</Button>
-                             <Button onClick={() => setActiveStep(2)}>Назад</Button>
+                             <Button type="submit" variant="contained" disabled={updateDealMutation.isPending || isDealReadOnly}>{updateDealMutation.isPending ? 'Сохранение...' : 'Сохранить данные'}</Button>
+                             <Button onClick={() => setActiveStep(2)} disabled={isDealReadOnly}>Назад</Button>
                           </Stack>
                       </form>
                     </StepContent>
@@ -273,7 +282,6 @@ export default function DealDetailPage() {
               </Timeline>
           </TabPanel>
         </Paper>
-      </fieldset>
 
       {isCancellationModalOpen && (
           <DealCancellationModal

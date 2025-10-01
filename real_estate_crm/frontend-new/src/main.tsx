@@ -1,10 +1,15 @@
+// frontend-new/src/main.tsx
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
+import './index.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { store, persistor } from './store/store'; // Импортируем и store, и persistor
+import { store, persistor } from './store/store';
 import { Provider } from 'react-redux';
-import { PersistGate } from 'redux-persist/integration/react'; // Импортируем PersistGate
+import { PersistGate } from 'redux-persist/integration/react';
+import { ThemeProvider } from '@mui/material/styles'; // <-- Импорт ThemeProvider
+import { theme } from './theme'; // <-- Импорт нашей новой темы
 
 const queryClient = new QueryClient();
 
@@ -13,7 +18,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <QueryClientProvider client={queryClient}>
-          <App />
+          {/* Применяем тему ко всему приложению */}
+          <ThemeProvider theme={theme}>
+            <App />
+          </ThemeProvider>
         </QueryClientProvider>
       </PersistGate>
     </Provider>

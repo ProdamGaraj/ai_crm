@@ -25,6 +25,15 @@ export interface ClientLog {
   created_at: string;
 }
 
+export interface ClientFile {
+  id: number;
+  file: string;
+  comment: string;
+  uploaded_at: string;
+  uploaded_by: string;
+}
+
+
 // Полный тип для детальной карточки
 export interface ClientDetail {
   id: number;
@@ -42,7 +51,6 @@ export interface ClientDetail {
   pinfl: string;
   registration_address: string;
   billing_address: string;
-  file_storage_link: string;
   comment: string;
   created_by: string | null;
   created_at: string;
@@ -50,6 +58,7 @@ export interface ClientDetail {
   applications: Application[];
   logs: ClientLog[];
   phone_numbers: ClientPhoneNumber[];
+  files: ClientFile[];
 }
 
 // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
@@ -107,4 +116,16 @@ export const createClient = async (newClient: ClientPayload): Promise<ClientDeta
 export const updateClient = async ({ id, payload }: { id: number; payload: ClientUpdatePayload }): Promise<ClientDetail> => {
   const response = await apiClient.patch(`/clients/${id}/`, payload);
   return response.data;
+};
+
+export const getClientFiles = async (clientId: number): Promise<ClientFile[]> => {
+    const response = await apiClient.get(`/clients/${clientId}/files/`);
+    return response.data;
+};
+
+export const uploadClientFile = async ({ clientId, formData }: { clientId: number; formData: FormData }): Promise<ClientFile> => {
+    const response = await apiClient.post(`/clients/${clientId}/files/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
 };

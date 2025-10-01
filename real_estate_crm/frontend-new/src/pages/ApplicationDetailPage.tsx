@@ -4,14 +4,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getApplicationById, updateApplication, getRejectionReasons, deleteApplication } from '../api/applications';
 import type { ApplicationPayload, RejectionReason } from '../api/applications';
 import {
-  Typography, CircularProgress, Alert, Paper, Grid, Box, Tabs, Tab, Button,
-  Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, TextField, Chip, Link as MuiLink,
-  Stack, FormControl, InputLabel, Select, MenuItem
+    Typography, CircularProgress, Alert, Paper, Grid, Box, Tabs, Tab, Button,
+    Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, TextField, Chip, Link as MuiLink,
+    Stack, FormControl, InputLabel, Select, MenuItem, Card, CardHeader, CardContent, Avatar
 } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid'; // <-- Импорт DataGrid
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot, timelineOppositeContentClasses } from '@mui/lab';
 import { Controller, useForm } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import InterestsIcon from '@mui/icons-material/Interests';
+import NotesIcon from '@mui/icons-material/Notes';
 import HumanizedLog from '../components/logs/HumanizedLog'; // <-- Импорт HumanizedLog
 import MeetingForm from '../components/meetings/MeetingForm'; // <-- Импорт MeetingForm
 import type { Meeting } from '../api/meetings'; // <-- Импорт типа Meeting
@@ -114,31 +117,38 @@ export default function ApplicationDetailPage() {
   const isEditable = app.status === 'NEW' || app.status === 'IN_PROGRESS';
 
   return (
-    <Paper sx={{ width: '100%' }}>
-      <Box sx={{ p: 3, pb: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <Typography variant="h4" gutterBottom>
-            Заявка №{app.id} <Chip label={app.status} color="primary" size="small" />
-          </Typography>
-          <Typography color="text.secondary">
-            Клиент: <MuiLink component={RouterLink} to={`/clients/${app.client.id}`}>{app.client.full_name}</MuiLink>
-          </Typography>
-        </div>
-        <Stack direction="row" spacing={2}>
-          {app.status === 'IN_PROGRESS' && (
-            <>
-              <Button variant="outlined" color="error" onClick={() => handleOpenReasonModal('JUNK')}>Нецелевая</Button>
-              <Button variant="outlined" color="warning" onClick={() => handleOpenReasonModal('REJECTED')}>Отказ</Button>
-            </>
-          )}
-          <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setIsDeleteDialogOpen(true)}>
-            Удалить
-          </Button>
+    <Stack spacing={3}>
+      <Paper sx={{ p: 2 }}>
+        <Stack direction="row" spacing={2} alignItems="center">
+            <Avatar sx={{ width: 64, height: 64 }} variant="rounded">
+                <AssignmentIcon fontSize="large" />
+            </Avatar>
+            <Box>
+                <Typography variant="h4" gutterBottom>
+                    Заявка №{app.id} <Chip label={app.status} color="primary" size="small" />
+                </Typography>
+                <Typography color="text.secondary">
+                    Клиент: <MuiLink component={RouterLink} to={`/clients/${app.client.id}`}>{app.client.full_name}</MuiLink>
+                </Typography>
+            </Box>
+            <Box sx={{ flexGrow: 1 }} />
+            <Stack direction="row" spacing={2}>
+                {app.status === 'IN_PROGRESS' && (
+                    <>
+                    <Button variant="outlined" color="error" onClick={() => handleOpenReasonModal('JUNK')}>Нецелевая</Button>
+                    <Button variant="outlined" color="warning" onClick={() => handleOpenReasonModal('REJECTED')}>Отказ</Button>
+                    </>
+                )}
+                <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setIsDeleteDialogOpen(true)}>
+                    Удалить
+                </Button>
+            </Stack>
         </Stack>
-      </Box>
+      </Paper>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
-        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+
+      <Box>
+        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tab label="Детали заявки" />
           <Tab label={`Встречи (${app.meetings?.length || 0})`} />
           <Tab label={`Логи (${app.logs.length})`} />
@@ -147,40 +157,55 @@ export default function ApplicationDetailPage() {
 
         <TabPanel value={tabValue} index={0}>
             <form onSubmit={handleSubmit(onFormSubmit)}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <Controller
-                      name="interested_property_type"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <FormControl fullWidth disabled={!isEditable}>
-                          <InputLabel>Тип недвижимости</InputLabel>
-                          <Select {...field} label="Тип недвижимости">
-                            <MenuItem value="APARTMENT">Квартира</MenuItem>
-                            <MenuItem value="COMMERCIAL">Коммерция</MenuItem>
-                            <MenuItem value="PARKING">Парковка</MenuItem>
-                            <MenuItem value="STORAGE">Кладовка</MenuItem>
-                            <MenuItem value="COTTAGE">Коттедж</MenuItem>
-                          </Select>
-                        </FormControl>
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Причина отказа/нецелевой" fullWidth disabled value={app.rejection_reason?.name || ''} />
-                  </Grid>
-                  <Grid item xs={12} sm={3}><TextField label="Площадь от (м²)" type="number" fullWidth disabled={!isEditable} {...register('min_area')} /></Grid>
-                  <Grid item xs={12} sm={3}><TextField label="Площадь до (м²)" type="number" fullWidth disabled={!isEditable} {...register('max_area')} /></Grid>
-                  <Grid item xs={12} sm={3}><TextField label="Этаж от" type="number" fullWidth disabled={!isEditable} {...register('min_floor')} /></Grid>
-                  <Grid item xs={12} sm={3}><TextField label="Этаж до" type="number" fullWidth disabled={!isEditable} {...register('max_floor')} /></Grid>
-                  <Grid item xs={12}><TextField label="Заметки" fullWidth multiline rows={4} disabled={!isEditable} {...register('notes')} /></Grid>
-                </Grid>
-                {isEditable && (
-                  <Button type="submit" variant="contained" sx={{ mt: 3 }} disabled={updateMutation.isPending}>
-                    {updateMutation.isPending ? 'Сохранение...' : 'Сохранить и взять в работу'}
-                  </Button>
-                )}
+                <Stack spacing={3}>
+                    <Card variant="outlined">
+                        <CardHeader avatar={<InterestsIcon />} title="Интересы клиента" />
+                        <CardContent>
+                            <Grid container spacing={2}>
+                              <Grid item xs={12} sm={6}>
+                                <Controller
+                                  name="interested_property_type"
+                                  control={control}
+                                  defaultValue=""
+                                  render={({ field }) => (
+                                    <FormControl fullWidth disabled={!isEditable}>
+                                      <InputLabel>Тип недвижимости</InputLabel>
+                                      <Select {...field} label="Тип недвижимости">
+                                        <MenuItem value="APARTMENT">Квартира</MenuItem>
+                                        <MenuItem value="COMMERCIAL">Коммерция</MenuItem>
+                                        <MenuItem value="PARKING">Парковка</MenuItem>
+                                        <MenuItem value="STORAGE">Кладовка</MenuItem>
+                                        <MenuItem value="COTTAGE">Коттедж</MenuItem>
+                                      </Select>
+                                    </FormControl>
+                                  )}
+                                />
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <TextField label="Причина отказа/нецелевой" fullWidth disabled value={app.rejection_reason?.name || ''} />
+                              </Grid>
+                              <Grid item xs={12} sm={3}><TextField label="Площадь от (м²)" type="number" fullWidth disabled={!isEditable} {...register('min_area')} /></Grid>
+                              <Grid item xs={12} sm={3}><TextField label="Площадь до (м²)" type="number" fullWidth disabled={!isEditable} {...register('max_area')} /></Grid>
+                              <Grid item xs={12} sm={3}><TextField label="Этаж от" type="number" fullWidth disabled={!isEditable} {...register('min_floor')} /></Grid>
+                              <Grid item xs={12} sm={3}><TextField label="Этаж до" type="number" fullWidth disabled={!isEditable} {...register('max_floor')} /></Grid>
+                            </Grid>
+                        </CardContent>
+                    </Card>
+                    <Card variant="outlined">
+                        <CardHeader avatar={<NotesIcon />} title="Заметки" />
+                        <CardContent>
+                            <TextField fullWidth multiline rows={4} disabled={!isEditable} {...register('notes')} />
+                        </CardContent>
+                    </Card>
+
+                    {isEditable && (
+                      <Box>
+                          <Button type="submit" variant="contained" disabled={updateMutation.isPending}>
+                            {updateMutation.isPending ? 'Сохранение...' : 'Сохранить и взять в работу'}
+                          </Button>
+                      </Box>
+                    )}
+                </Stack>
             </form>
         </TabPanel>
 
@@ -269,6 +294,6 @@ export default function ApplicationDetailPage() {
           </DialogContent>
       </Dialog>
 
-    </Paper>
+    </Stack>
   );
 }

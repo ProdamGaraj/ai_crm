@@ -35,6 +35,15 @@ const ROLE_LEVELS = [
   { value: 'PERSONAL', label: 'Личный' },
 ];
 
+// Маппинг кодов ролей на русские названия
+const ROLE_NAME_MAPPING: Record<string, string> = {
+  'SYSTEM_ADMIN': 'Системный администратор',
+  'COMPANY_ADMIN': 'Администратор компании',
+  'DEPARTMENT_MANAGER': 'Руководитель отдела',
+  'MANAGER': 'Менеджер',
+  'VIEWER': 'Наблюдатель',
+};
+
 // Группировка разрешений по ресурсам
 const groupPermissionsByResource = (permissions: any[]) => {
   const grouped: Record<string, any[]> = {};
@@ -69,6 +78,13 @@ const RESOURCE_LABELS: Record<string, string> = {
   DEPARTMENT: 'Отделы',
   ROLE: 'Роли',
   USER: 'Пользователи',
+  BENEFICIARY_ACCOUNT: 'Счета получателей',
+  DASHBOARD: 'Дашборд',
+  PAYMENT_TYPE: 'Типы платежей',
+  PERMISSION: 'Разрешения',
+  PLAN: 'Планы',
+  SETTINGS: 'Настройки',
+  TEMPLATE: 'Шаблоны',
   OTHER: 'Прочее',
 };
 
@@ -117,10 +133,17 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
+      // Преобразуем permissions в permission_ids для backend
+      const payload = {
+        ...data,
+        permission_ids: data.permissions,
+      };
+      delete payload.permissions; // Удаляем старое поле
+      
       if (role) {
-        return updateRole(role.id, data);
+        return updateRole(role.id, payload);
       }
-      return createRole(data);
+      return createRole(payload);
     },
     onSuccess: () => {
       onSuccess();

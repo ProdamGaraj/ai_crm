@@ -39,6 +39,15 @@ const ROLE_LEVEL_LABELS: Record<string, string> = {
   PERSONAL: 'Личный',
 };
 
+// Маппинг кодов ролей на русские названия
+const ROLE_NAME_MAPPING: Record<string, string> = {
+  'SYSTEM_ADMIN': 'Системный администратор',
+  'COMPANY_ADMIN': 'Администратор компании',
+  'DEPARTMENT_MANAGER': 'Руководитель отдела',
+  'MANAGER': 'Менеджер',
+  'VIEWER': 'Наблюдатель',
+};
+
 // Русские названия для action
 const ACTION_LABELS: Record<string, string> = {
   VIEW: 'Просмотр',
@@ -74,6 +83,13 @@ const RESOURCE_LABELS: Record<string, string> = {
   DEPARTMENT: 'Отделы',
   ROLE: 'Роли',
   USER: 'Пользователи',
+  BENEFICIARY_ACCOUNT: 'Счета получателей',
+  DASHBOARD: 'Дашборд',
+  PAYMENT_TYPE: 'Типы платежей',
+  PERMISSION: 'Разрешения',
+  PLAN: 'Планы',
+  SETTINGS: 'Настройки',
+  TEMPLATE: 'Шаблоны',
   OTHER: 'Прочее',
 };
 
@@ -154,7 +170,9 @@ export default function RoleDetailPage() {
         </IconButton>
         <SecurityIcon color="primary" sx={{ fontSize: 32 }} />
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h4">{role.name}</Typography>
+          <Typography variant="h4">
+            {role.name || ROLE_NAME_MAPPING[role.code] || role.code}
+          </Typography>
           <Typography variant="body2" color="text.secondary">
             Код: {role.code} • Уровень: {ROLE_LEVEL_LABELS[role.level] || role.level}
           </Typography>
@@ -200,7 +218,9 @@ export default function RoleDetailPage() {
                   <Typography variant="caption" color="text.secondary">
                     Название
                   </Typography>
-                  <Typography variant="body1">{role.name}</Typography>
+                  <Typography variant="body1">
+                    {role.name || ROLE_NAME_MAPPING[role.code] || role.code}
+                  </Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
@@ -367,7 +387,7 @@ export default function RoleDetailPage() {
         <DialogTitle>Удалить роль?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" gutterBottom>
-            Вы уверены, что хотите удалить роль "{role.name}"?
+            Вы уверены, что хотите удалить роль "{role.name || ROLE_NAME_MAPPING[role.code] || role.code}"?
           </Typography>
           <Typography variant="body2" color="error">
             Это действие нельзя отменить.

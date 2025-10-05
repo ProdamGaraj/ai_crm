@@ -28,24 +28,37 @@ const ROLE_LEVEL_LABELS: Record<string, string> = {
   PERSONAL: 'Личный',
 };
 
+// Маппинг кодов ролей на русские названия (на случай если приходит code вместо name)
+const ROLE_NAME_MAPPING: Record<string, string> = {
+  'SYSTEM_ADMIN': 'Системный администратор',
+  'COMPANY_ADMIN': 'Администратор компании',
+  'DEPARTMENT_MANAGER': 'Руководитель отдела',
+  'MANAGER': 'Менеджер',
+  'VIEWER': 'Наблюдатель',
+};
+
 const columns: GridColDef[] = [
   { field: 'id', headerName: 'ID', width: 70 },
   {
     field: 'name',
     headerName: 'Название',
     width: 250,
-    renderCell: (params) => (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <SecurityIcon color="primary" fontSize="small" />
-        <MuiLink
-          component={RouterLink}
-          to={`/permissions/roles/${params.row.id}`}
-          underline="hover"
-        >
-          {params.value}
-        </MuiLink>
-      </Box>
-    ),
+    renderCell: (params) => {
+      // Используем name если есть, иначе пытаемся перевести code
+      const displayName = params.value || ROLE_NAME_MAPPING[params.row.code] || params.row.code;
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <SecurityIcon color="primary" fontSize="small" />
+          <MuiLink
+            component={RouterLink}
+            to={`/permissions/roles/${params.row.id}`}
+            underline="hover"
+          >
+            {displayName}
+          </MuiLink>
+        </Box>
+      );
+    },
   },
   { field: 'code', headerName: 'Код', width: 150 },
   {

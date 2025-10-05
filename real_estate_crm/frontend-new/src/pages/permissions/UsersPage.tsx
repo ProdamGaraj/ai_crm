@@ -27,6 +27,14 @@ import AddIcon from '@mui/icons-material/Add';
 import PersonIcon from '@mui/icons-material/Person';
 import FilterListIcon from '@mui/icons-material/FilterList';
 
+const ROLE_NAME_MAPPING: Record<string, string> = {
+  'SYSTEM_ADMIN': 'Системный администратор',
+  'COMPANY_ADMIN': 'Администратор компании',
+  'DEPARTMENT_MANAGER': 'Руководитель отдела',
+  'MANAGER': 'Менеджер',
+  'VIEWER': 'Наблюдатель',
+};
+
 const columns: GridColDef[] = [
   { field: 'id', headerName: 'ID', width: 70 },
   {
@@ -66,15 +74,18 @@ const columns: GridColDef[] = [
     renderCell: (params) => (
       <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
         {params.value?.length > 0 ? (
-          params.value.map((role: any) => (
-            <Chip
-              key={role.id}
-              label={role.name}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-          ))
+          params.value.map((role: any) => {
+            const displayName = role.name || ROLE_NAME_MAPPING[role.code] || role.code;
+            return (
+              <Chip
+                key={role.id}
+                label={displayName}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            );
+          })
         ) : (
           <Typography variant="caption" color="text.secondary">
             Нет ролей
@@ -174,6 +185,16 @@ export default function UsersPage() {
             Управление профилями пользователей и назначение ролей
           </Typography>
         </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => {
+            setSelectedUser(null);
+            setIsModalOpen(true);
+          }}
+        >
+          Добавить пользователя
+        </Button>
       </Box>
 
       {/* Фильтры */}

@@ -242,15 +242,20 @@ export const getUserProfile = async (id: number): Promise<UserProfile> => {
 };
 
 export const createUserProfile = async (data: {
-  user: number;
+  username: string;
+  password: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
   company_id?: number;
   department_id?: number;
   role_ids?: number[];
   position?: string;
   phone?: string;
   is_system_admin?: boolean;
+  is_active?: boolean;
 }): Promise<UserProfile> => {
-  const response = await apiClient.post(`/permissions/user-profiles/`, data);
+  const response = await apiClient.post(`/permissions/user-profiles/create_user/`, data);
   return response.data;
 };
 

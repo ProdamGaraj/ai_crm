@@ -287,3 +287,107 @@ class BulkPermissionAssignSerializer(serializers.Serializer):
             )
         
         return value
+
+
+class UserCreateSerializer(serializers.Serializer):
+    """
+    Serializer для создания нового пользователя с профилем
+    """
+    username = serializers.CharField(max_length=150)
+    password = serializers.CharField(write_only=True, min_length=8)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    
+    # Поля профиля
+    company_id = serializers.IntegerField(required=False, allow_null=True)
+    department_id = serializers.IntegerField(required=False, allow_null=True)
+    role_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        allow_empty=True
+    )
+    position = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    is_system_admin = serializers.BooleanField(default=False)
+    is_active = serializers.BooleanField(default=True)
+    
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError(
+                "Пользователь с таким именем уже существует"
+            )
+        return value
+    
+    def validate_email(self, value):
+        if value and User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                "Пользователь с таким email уже существует"
+            )
+        return value
+    
+    def validate_company_id(self, value):
+        if value:
+            try:
+                Company.objects.get(id=value, is_active=True)
+            except Company.DoesNotExist:
+                raise serializers.ValidationError("Компания не найдена")
+        return value
+    
+    def validate_department_id(self, value):
+        if value:
+            try:
+                Department.objects.get(id=value, is_active=True)
+            except Department.DoesNotExist:
+                raise serializers.ValidationError("Отдел не найден")
+        return value
+    
+    def validate_role_ids(self, value):
+        if value:
+            existing_ids = Role.objects.filter(
+                id__in=value,
+                is_active=True
+            ).values_list('id', flat=True)
+            
+            invalid_ids = set(value) - set(existing_ids)
+            if invalid_ids:
+                raise serializers.ValidationError(
+                    f"Роли с ID {invalid_ids} не найдены или неактивны"
+                )
+        return value
+    
+    def create(self, validated_data):
+        # Извлекаем данные для User
+        username = validated_data['username']
+        password = validated_data['password']
+        email = validated_data.get('email', '')
+        first_name = validated_data.get('first_name', '')
+        last_name = validated_data.get('last_name', '')
+        
+        # Создаём пользователя
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=email,
+            first_name=first_name,
+            last_name=last_name
+        )
+        
+        # Создаём профиль
+        profile = UserProfile.objects.create(
+            user=user,
+            company_id=validated_data.get('company_id'),
+            department_id=validated_data.get('department_id'),
+            position=validated_data.get('position', ''),
+            phone=validated_data.get('phone', ''),
+            is_system_admin=validated_data.get('is_system_admin', False),
+            is_active=validated_data.get('is_active', True)
+        )
+        
+        # Назначаем роли
+        role_ids = validated_data.get('role_ids', [])
+        if role_ids:
+            roles = Role.objects.filter(id__in=role_ids)
+            profile.roles.set(roles)
+        
+        return profile

@@ -1,10 +1,10 @@
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import type { RootState } from './store/store';
 import BuildingDetailPage from './pages/BuildingDetailPage';
 // Импорт макетов и страниц
 import RootLayout from './layouts/RootLayout';
-import LoginPage from './pages/LoginPage';
+import LoginPage from './pages/auth/LoginPage';
+import PasswordResetRequestPage from './pages/auth/PasswordResetRequestPage';
+import PasswordResetConfirmPage from './pages/auth/PasswordResetConfirmPage';
 import DashboardPage from './pages/DashboardPage';
 import ClientsPage from './pages/ClientsPage';
 import ClientDetailPage from './pages/ClientDetailPage';
@@ -24,14 +24,16 @@ import ReportsPage from './pages/ReportsPage';
 // Permissions pages
 import CompanyDetailPage from './pages/permissions/CompanyDetailPage';
 import RoleDetailPage from './pages/permissions/RoleDetailPage';
+// Auth
+import ProtectedRoute from './components/ProtectedRoute';
 
-// Компонент-обертка для защиты маршрутов
-const ProtectedRoute = () => {
-  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  return <Outlet />;
+// Компонент-обертка для защиты маршрутов (используя новую систему авторизации)
+const ProtectedRouteWrapper = () => {
+  return (
+    <ProtectedRoute>
+      <Outlet />
+    </ProtectedRoute>
+  );
 };
 
 // Определяем все маршруты приложения
@@ -41,11 +43,19 @@ const router = createBrowserRouter([
     element: <LoginPage />,
   },
   {
+    path: '/forgot-password',
+    element: <PasswordResetRequestPage />,
+  },
+  {
+    path: '/reset-password/:uid/:token',
+    element: <PasswordResetConfirmPage />,
+  },
+  {
     path: '/',
     element: <RootLayout />,
     children: [
       {
-        element: <ProtectedRoute />,
+        element: <ProtectedRouteWrapper />,
         children: [
           { index: true, element: <DashboardPage /> },
           { path: 'clients', element: <ClientsPage /> },

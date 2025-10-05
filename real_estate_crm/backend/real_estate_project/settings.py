@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',  # Для blacklist токенов при выходе
     'apps.documents.apps.DocumentsConfig',
     'django_filters',
     'apps.reports',
@@ -163,3 +164,15 @@ SIMPLE_JWT = {
     "UPDATE_LAST_LOGIN": True,                         # Обновлять поле last_login у пользователя при входе
 }
 SITE_URL = 'http://127.0.0.1:8000'
+
+# Email settings (для восстановления пароля)
+# В продакшене замените на реальные настройки SMTP
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Для разработки - письма в консоль
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Для продакшена
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your-email@gmail.com'
+# EMAIL_HOST_PASSWORD = 'your-app-password'
+DEFAULT_FROM_EMAIL = 'noreply@crm.local'
+FRONTEND_URL = 'http://localhost:5173'  # URL фронтенда для ссылок в письмах

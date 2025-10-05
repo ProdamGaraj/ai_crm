@@ -1,5 +1,22 @@
-import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar } from '@mui/material';
-import { Link, Outlet } from 'react-router-dom';
+import { 
+  Box, 
+  Drawer, 
+  List, 
+  ListItem, 
+  ListItemButton, 
+  ListItemIcon, 
+  ListItemText, 
+  Toolbar,
+  AppBar,
+  Typography,
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  Divider,
+} from '@mui/material';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import EventIcon from '@mui/icons-material/Event';
 // Иконки
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -11,6 +28,9 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import LogoutIcon from '@mui/icons-material/Logout';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { useAuthStore } from '../store/authStore';
 
 const drawerWidth = 240;
 
@@ -28,9 +48,115 @@ const navItems = [
 ];
 
 export default function RootLayout() {
-  // ... остальной код файла без изменений ...
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const getUserDisplayName = () => {
+    if (user?.user_full_name) {
+      return user.user_full_name;
+    }
+    return user?.user_username || 'Пользователь';
+  };
+
+  const getUserInitials = () => {
+    if (user?.user_full_name) {
+      const parts = user.user_full_name.split(' ');
+      if (parts.length >= 2) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      }
+      return user.user_full_name.substring(0, 2).toUpperCase();
+    }
+    if (user?.user_username) {
+      return user.user_username.substring(0, 2).toUpperCase();
+    }
+    return 'UN';
+  };
+
   return (
     <Box sx={{ display: 'flex' }}>
+      {/* AppBar с информацией о пользователе */}
+      <AppBar 
+        position="fixed" 
+        sx={{ 
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          bgcolor: 'background.paper',
+          color: 'text.primary',
+          boxShadow: 1,
+        }}
+      >
+        <Toolbar>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+            CRM Недвижимость
+          </Typography>
+
+          {/* Информация о пользователе */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" sx={{ mr: 1 }}>
+              {getUserDisplayName()}
+            </Typography>
+            <IconButton onClick={handleMenuOpen} size="small">
+              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                {getUserInitials()}
+              </Avatar>
+            </IconButton>
+          </Box>
+
+          {/* Меню пользователя */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem disabled>
+              <AccountCircleIcon sx={{ mr: 1 }} />
+              {user?.email || 'Нет email'}
+            </MenuItem>
+            {user?.company_name && (
+              <MenuItem disabled>
+                <Typography variant="body2" color="text.secondary">
+                  Компания: {user.company_name}
+                </Typography>
+              </MenuItem>
+            )}
+            {user?.department_name && (
+              <MenuItem disabled>
+                <Typography variant="body2" color="text.secondary">
+                  Отдел: {user.department_name}
+                </Typography>
+              </MenuItem>
+            )}
+            <Divider />
+            <MenuItem onClick={handleLogout}>
+              <LogoutIcon sx={{ mr: 1 }} />
+              Выйти
+            </MenuItem>
+          </Menu>
+        </Toolbar>
+      </AppBar>
+
+      {/* Боковое меню */}
       <Drawer
         variant="permanent"
         sx={{
@@ -56,6 +182,8 @@ export default function RootLayout() {
           </List>
         </Box>
       </Drawer>
+
+      {/* Основной контент */}
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
         <Outlet />

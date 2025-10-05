@@ -9,6 +9,12 @@ from .views import (
     UserProfileViewSet, PermissionLogViewSet,
     CurrentUserProfileView, PermissionStatsView
 )
+from .auth_views import (
+    login_view,
+    logout_view,
+    password_reset_request,
+    password_reset_confirm
+)
 
 # Создаем роутер для ViewSets
 router = DefaultRouter()
@@ -22,6 +28,12 @@ router.register(r'logs', PermissionLogViewSet, basename='permissionlog')
 urlpatterns = [
     # ViewSets через router
     path('', include(router.urls)),
+    
+    # Аутентификация
+    path('auth/login/', login_view, name='login'),
+    path('auth/logout/', logout_view, name='logout'),
+    path('auth/password-reset/', password_reset_request, name='password-reset'),
+    path('auth/password-reset/confirm/', password_reset_confirm, name='password-reset-confirm'),
     
     # Дополнительные endpoints
     path('me/', CurrentUserProfileView.as_view(), name='current-user-profile'),

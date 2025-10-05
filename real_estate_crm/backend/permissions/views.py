@@ -200,6 +200,38 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         return get_filtered_queryset(self.request.user, queryset, 'USER')
     
+    @action(detail=False, methods=['post'])
+    def create_user(self, request):
+        """
+        Создать нового пользователя с профилем
+        """
+        from .serializers import UserCreateSerializer
+        
+        serializer = UserCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile = serializer.save()
+        
+        # Логируем создание пользователя
+        PermissionLog.objects.create(
+            user=request.user,
+            action='USER_CREATE',
+            entity_type='UserProfile',
+            entity_id=profile.id,
+            details={
+                'username': profile.user.username,
+                'company_id': profile.company_id,
+                'department_id': profile.department_id,
+                'roles': list(profile.roles.values_list('id', flat=True))
+            },
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        
+        # Возвращаем созданный профиль
+        return Response(
+            UserProfileDetailSerializer(profile).data,
+            status=status.HTTP_201_CREATED
+        )
+    
     @action(detail=True, methods=['get'])
     def permissions(self, request, pk=None):
         """

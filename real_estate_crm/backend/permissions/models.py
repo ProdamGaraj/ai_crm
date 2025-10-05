@@ -174,28 +174,48 @@ class Permission(models.Model):
 
 class Role(models.Model):
     """
-    Роль - набор разрешений
+    Роль - набор разрешений с определенной областью действия
     """
     
-    class RoleLevel(models.TextChoices):
+    class RoleCategory(models.TextChoices):
         """
-        Уровень роли определяет базовую иерархию
+        Категория роли (для группировки в UI)
         """
-        SYSTEM_ADMIN = 'SYSTEM_ADMIN', 'Системный администратор'
-        COMPANY_ADMIN = 'COMPANY_ADMIN', 'Администратор компании'
-        DEPARTMENT_MANAGER = 'DEPARTMENT_MANAGER', 'Руководитель отдела'
-        MANAGER = 'MANAGER', 'Менеджер'
-        VIEWER = 'VIEWER', 'Наблюдатель'
-        CUSTOM = 'CUSTOM', 'Пользовательская роль'
+        ADMINISTRATIVE = 'ADMINISTRATIVE', 'Административная'
+        MANAGEMENT = 'MANAGEMENT', 'Управленческая'
+        OPERATIONAL = 'OPERATIONAL', 'Операционная'
+        READONLY = 'READONLY', 'Только просмотр'
+        CUSTOM = 'CUSTOM', 'Пользовательская'
+
+    class RoleScope(models.TextChoices):
+        """
+        Область действия роли (реальная иерархия доступа)
+        """
+        SYSTEM = 'SYSTEM', 'Вся система'
+        COMPANY = 'COMPANY', 'Компания'
+        DEPARTMENT = 'DEPARTMENT', 'Отдел'
+        OWN = 'OWN', 'Только свои данные'
 
     name = models.CharField(max_length=255, verbose_name="Название роли")
     code = models.CharField(max_length=100, unique=True, verbose_name="Код роли")
     description = models.TextField(blank=True, verbose_name="Описание")
-    level = models.CharField(
+    
+    # Категория для группировки в интерфейсе
+    category = models.CharField(
         max_length=30,
-        choices=RoleLevel.choices,
-        default=RoleLevel.CUSTOM,
-        verbose_name="Уровень роли"
+        choices=RoleCategory.choices,
+        default=RoleCategory.CUSTOM,
+        verbose_name="Категория роли",
+        help_text="Группировка роли в интерфейсе пользователя"
+    )
+    
+    # Область действия (реальная иерархия)
+    scope = models.CharField(
+        max_length=30,
+        choices=RoleScope.choices,
+        default=RoleScope.OWN,
+        verbose_name="Область действия",
+        help_text="Определяет уровень доступа: система, компания, отдел или личные данные"
     )
     
     # Связи
@@ -236,10 +256,20 @@ class Role(models.Model):
     class Meta:
         verbose_name = "Роль"
         verbose_name_plural = "Роли"
-        ordering = ['level', 'name']
+        ordering = ['scope', 'category', 'name']
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.get_scope_display()})"
+    
+    @property
+    def scope_display(self):
+        """Человекочитаемое название области действия"""
+        return self.get_scope_display()
+    
+    @property
+    def category_display(self):
+        """Человекочитаемое название категории"""
+        return self.get_category_display()
 
 
 class UserProfile(models.Model):
@@ -349,8 +379,8 @@ class UserProfile(models.Model):
         if self.is_system_admin:
             return Company.objects.filter(is_active=True)
         
-        # Если у пользователя роль уровня SYSTEM, он видит все компании
-        if self.roles.filter(level=Role.RoleLevel.SYSTEM_ADMIN, is_active=True).exists():
+        # Если у пользователя роль с областью SYSTEM, он видит все компании
+        if self.roles.filter(scope=Role.RoleScope.SYSTEM, is_active=True).exists():
             return Company.objects.filter(is_active=True)
         
         # Иначе только свою компанию
@@ -366,16 +396,16 @@ class UserProfile(models.Model):
         if self.is_system_admin:
             return Department.objects.filter(is_active=True)
         
-        # Администраторы компании видят все отделы своей компании
+        # Роли с областью COMPANY видят все отделы своей компании
         if self.company and self.roles.filter(
-            level=Role.RoleLevel.COMPANY_ADMIN,
+            scope=Role.RoleScope.COMPANY,
             is_active=True
         ).exists():
             return Department.objects.filter(company=self.company, is_active=True)
         
-        # Руководители отдела видят свой отдел и подотделы
+        # Роли с областью DEPARTMENT видят свой отдел и подотделы
         if self.department and self.roles.filter(
-            level=Role.RoleLevel.DEPARTMENT_MANAGER,
+            scope=Role.RoleScope.DEPARTMENT,
             is_active=True
         ).exists():
             # Получаем отдел и все его подотделы рекурсивно

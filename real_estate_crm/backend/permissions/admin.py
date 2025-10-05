@@ -32,11 +32,11 @@ class PermissionAdmin(admin.ModelAdmin):
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'level', 'is_system', 'is_active', 'created_at']
-    list_filter = ['level', 'is_system', 'is_active', 'created_at']
+    list_display = ['name', 'code', 'scope', 'category', 'is_system', 'is_active', 'created_at']
+    list_filter = ['scope', 'category', 'is_system', 'is_active', 'created_at']
     search_fields = ['name', 'code', 'description']
     filter_horizontal = ['permissions', 'companies']
-    ordering = ['level', 'name']
+    ordering = ['scope', 'category', 'name']
     readonly_fields = ['created_at', 'updated_at']
 
 

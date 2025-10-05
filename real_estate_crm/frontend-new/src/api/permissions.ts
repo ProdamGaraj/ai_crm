@@ -40,7 +40,10 @@ export interface Role {
   id: number;
   name: string;
   code: string;
-  level: string;
+  scope: string;
+  scope_display?: string;
+  category: string;
+  category_display?: string;
   description?: string;
   is_system: boolean;
   is_active: boolean;
@@ -93,7 +96,8 @@ export interface DepartmentFilters {
 }
 
 export interface RoleFilters {
-  level?: string;
+  scope?: string;
+  category?: string;
   is_system?: boolean;
   is_active?: boolean;
 }
@@ -184,7 +188,8 @@ export const getGroupedPermissions = async (): Promise<any> => {
 // API функции для ролей
 export const getRoles = async (filters?: RoleFilters): Promise<Role[]> => {
   const params = new URLSearchParams();
-  if (filters?.level) params.append('level', filters.level);
+  if (filters?.scope) params.append('scope', filters.scope);
+  if (filters?.category) params.append('category', filters.category);
   if (filters?.is_system !== undefined) params.append('is_system', String(filters.is_system));
   if (filters?.is_active !== undefined) params.append('is_active', String(filters.is_active));
   

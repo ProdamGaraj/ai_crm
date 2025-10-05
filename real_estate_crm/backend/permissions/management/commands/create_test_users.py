@@ -76,7 +76,8 @@ class Command(BaseCommand):
             defaults={
                 'name': 'Менеджер',
                 'description': 'Менеджер по продажам - управление клиентами и сделками',
-                'level': Role.RoleLevel.MANAGER,
+                'scope': Role.RoleScope.OWN,
+                'category': Role.RoleCategory.OPERATIONAL,
                 'is_system': False,
                 'is_active': True,
             }
@@ -92,7 +93,8 @@ class Command(BaseCommand):
             defaults={
                 'name': 'Директор отдела',
                 'description': 'Директор отдела - полный доступ к клиентам, сделкам и проектам',
-                'level': Role.RoleLevel.DEPARTMENT_MANAGER,
+                'scope': Role.RoleScope.DEPARTMENT,
+                'category': Role.RoleCategory.MANAGEMENT,
                 'is_system': False,
                 'is_active': True,
             }
@@ -109,7 +111,8 @@ class Command(BaseCommand):
             defaults={
                 'name': 'Наблюдатель',
                 'description': 'Наблюдатель - только просмотр данных',
-                'level': Role.RoleLevel.VIEWER,
+                'scope': Role.RoleScope.COMPANY,
+                'category': Role.RoleCategory.READONLY,
                 'is_system': False,
                 'is_active': True,
             }

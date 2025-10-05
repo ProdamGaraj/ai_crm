@@ -65,7 +65,8 @@ class PermissionSerializer(serializers.ModelSerializer):
 
 
 class RoleListSerializer(serializers.ModelSerializer):
-    level_display = serializers.CharField(source='get_level_display', read_only=True)
+    scope_display = serializers.CharField(source='get_scope_display', read_only=True)
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
     permissions_count = serializers.SerializerMethodField()
     users_count = serializers.SerializerMethodField()
     
@@ -73,7 +74,8 @@ class RoleListSerializer(serializers.ModelSerializer):
         model = Role
         fields = [
             'id', 'name', 'code', 'description',
-            'level', 'level_display',
+            'scope', 'scope_display',
+            'category', 'category_display',
             'permissions_count', 'users_count',
             'is_system', 'is_active',
             'created_at', 'updated_at'
@@ -87,7 +89,8 @@ class RoleListSerializer(serializers.ModelSerializer):
 
 
 class RoleDetailSerializer(serializers.ModelSerializer):
-    level_display = serializers.CharField(source='get_level_display', read_only=True)
+    scope_display = serializers.CharField(source='get_scope_display', read_only=True)
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
     permissions = PermissionSerializer(many=True, read_only=True)
     permission_ids = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -113,7 +116,8 @@ class RoleDetailSerializer(serializers.ModelSerializer):
         model = Role
         fields = [
             'id', 'name', 'code', 'description',
-            'level', 'level_display',
+            'scope', 'scope_display',
+            'category', 'category_display',
             'permissions', 'permission_ids',
             'companies', 'company_ids',
             'is_system', 'is_active',

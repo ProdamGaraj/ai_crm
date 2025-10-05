@@ -259,17 +259,26 @@ class Role(models.Model):
         ordering = ['scope', 'category', 'name']
 
     def __str__(self):
-        return f"{self.name} ({self.get_scope_display()})"
+        try:
+            return f"{self.name} ({self.get_scope_display()})"
+        except:
+            return self.name or self.code
     
     @property
     def scope_display(self):
         """Человекочитаемое название области действия"""
-        return self.get_scope_display()
+        try:
+            return self.get_scope_display()
+        except:
+            return self.scope
     
     @property
     def category_display(self):
         """Человекочитаемое название категории"""
-        return self.get_category_display()
+        try:
+            return self.get_category_display()
+        except:
+            return self.category
 
 
 class UserProfile(models.Model):

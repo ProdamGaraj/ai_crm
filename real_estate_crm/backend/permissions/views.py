@@ -42,6 +42,23 @@ class CompanyViewSet(viewsets.ModelViewSet):
         """Фильтруем компании на основе разрешений пользователя"""
         queryset = super().get_queryset()
         return get_filtered_queryset(self.request.user, queryset, 'COMPANY')
+    
+    @action(detail=False, methods=['get'])
+    def accessible(self, request):
+        """
+        Получить список компаний, доступных для назначения в роли
+        На основе scope текущего пользователя
+        """
+        try:
+            profile = request.user.profile
+            companies = profile.get_accessible_companies()
+            serializer = self.get_serializer(companies, many=True)
+            return Response(serializer.data)
+        except UserProfile.DoesNotExist:
+            return Response(
+                {'error': 'Профиль пользователя не найден'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class DepartmentViewSet(viewsets.ModelViewSet):
@@ -61,6 +78,23 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         """Фильтруем отделы на основе разрешений пользователя"""
         queryset = super().get_queryset()
         return get_filtered_queryset(self.request.user, queryset, 'DEPARTMENT')
+    
+    @action(detail=False, methods=['get'])
+    def accessible(self, request):
+        """
+        Получить список отделов, доступных для назначения в роли
+        На основе scope текущего пользователя
+        """
+        try:
+            profile = request.user.profile
+            departments = profile.get_accessible_departments()
+            serializer = self.get_serializer(departments, many=True)
+            return Response(serializer.data)
+        except UserProfile.DoesNotExist:
+            return Response(
+                {'error': 'Профиль пользователя не найден'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
@@ -100,10 +134,10 @@ class RoleViewSet(viewsets.ModelViewSet):
     queryset = Role.objects.prefetch_related('permissions', 'companies').all()
     permission_classes = [IsAuthenticated, RolePermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['level', 'is_system', 'is_active']
+    filterset_fields = ['scope', 'category', 'is_system', 'is_active']
     search_fields = ['name', 'code', 'description']
-    ordering_fields = ['name', 'level', 'created_at']
-    ordering = ['level', 'name']
+    ordering_fields = ['name', 'scope', 'category', 'created_at']
+    ordering = ['scope', 'category', 'name']
     
     def get_serializer_class(self):
         if self.action in ['list']:

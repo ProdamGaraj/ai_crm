@@ -139,6 +139,12 @@ export const deleteCompany = async (id: number): Promise<void> => {
   await apiClient.delete(`/permissions/companies/${id}/`);
 };
 
+// Получить доступные компании для назначения в роли
+export const getAccessibleCompanies = async (): Promise<Company[]> => {
+  const response = await apiClient.get(`/permissions/companies/accessible/`);
+  return response.data;
+};
+
 // API функции для отделов
 export const getDepartments = async (filters?: DepartmentFilters): Promise<Department[]> => {
   const params = new URLSearchParams();
@@ -167,6 +173,12 @@ export const updateDepartment = async (id: number, data: Partial<Department>): P
 
 export const deleteDepartment = async (id: number): Promise<void> => {
   await apiClient.delete(`/permissions/departments/${id}/`);
+};
+
+// Получить доступные отделы для назначения в роли
+export const getAccessibleDepartments = async (): Promise<Department[]> => {
+  const response = await apiClient.get(`/permissions/departments/accessible/`);
+  return response.data;
 };
 
 // API функции для разрешений

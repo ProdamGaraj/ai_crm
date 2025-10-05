@@ -215,7 +215,7 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
     setFormData((prev) => ({ ...prev, is_active: e.target.checked }));
   }, []);
 
-  // Обработчик изменения разрешений для ресурса (currying для стабильных ссылок)
+  // Обработчик изменения разрешений для ресурса
   const handleResourceChange = useCallback(
     (resource: string) => (newPermissions: ResourcePermissions) => {
       setPermissionsHierarchy((prev) => ({
@@ -234,28 +234,6 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
 
   // Получаем список всех ресурсов
   const resources = useMemo(() => Object.keys(groupedPermissions).sort(), [groupedPermissions]);
-
-  // Мемоизируем callbacks для каждого ресурса (чтобы onChange не пересоздавался)
-  const resourceCallbacks = useMemo(() => {
-    const callbacks: Record<string, (newPermissions: ResourcePermissions) => void> = {};
-    resources.forEach((resource) => {
-      callbacks[resource] = handleResourceChange(resource);
-    });
-    return callbacks;
-  }, [resources, handleResourceChange]);
-
-  // Мемоизируем массивы чтобы избежать лишних ре-рендеров
-  const memoizedCompanies = useMemo(() => accessibleCompanies, [accessibleCompanies]);
-  const memoizedDepartments = useMemo(() => accessibleDepartments, [accessibleDepartments]);
-
-  // Мемоизируем пустые разрешения для каждого ресурса
-  const emptyPermissionsMap = useMemo(() => {
-    const map: Record<string, ResourcePermissions> = {};
-    resources.forEach((resource) => {
-      map[resource] = emptyResourcePermissions();
-    });
-    return map;
-  }, [resources]);
 
   // Подсчет выбранных разрешений
   const selectedPermissionsCount = useMemo(
@@ -317,10 +295,10 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
                   key={resource}
                   resourceName={resource}
                   resourceLabel={RESOURCE_LABELS[resource] || resource}
-                  permissions={permissionsHierarchy[resource] || emptyPermissionsMap[resource]}
-                  companies={memoizedCompanies}
-                  departments={memoizedDepartments}
-                  onChange={resourceCallbacks[resource]}
+                  permissions={permissionsHierarchy[resource] || emptyResourcePermissions()}
+                  companies={accessibleCompanies}
+                  departments={accessibleDepartments}
+                  onChange={handleResourceChange(resource)}
                   userCompanyId={userCompanyId}
                 />
               ))}

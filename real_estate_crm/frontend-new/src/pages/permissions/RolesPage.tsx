@@ -21,20 +21,21 @@ import RoleForm from '../../components/permissions/RoleForm';
 import AddIcon from '@mui/icons-material/Add';
 import SecurityIcon from '@mui/icons-material/Security';
 
-const ROLE_LEVEL_LABELS: Record<string, string> = {
-  SYSTEM: 'Системный',
+// Области действия роли
+const ROLE_SCOPE_LABELS: Record<string, string> = {
+  SYSTEM: 'Вся система',
   COMPANY: 'Компания',
   DEPARTMENT: 'Отдел',
-  PERSONAL: 'Личный',
+  OWN: 'Только свои',
 };
 
-// Маппинг кодов ролей на русские названия (на случай если приходит code вместо name)
-const ROLE_NAME_MAPPING: Record<string, string> = {
-  'SYSTEM_ADMIN': 'Системный администратор',
-  'COMPANY_ADMIN': 'Администратор компании',
-  'DEPARTMENT_MANAGER': 'Руководитель отдела',
-  'MANAGER': 'Менеджер',
-  'VIEWER': 'Наблюдатель',
+// Категории ролей
+const ROLE_CATEGORY_LABELS: Record<string, string> = {
+  ADMINISTRATIVE: 'Административная',
+  MANAGEMENT: 'Управленческая',
+  OPERATIONAL: 'Операционная',
+  READONLY: 'Только просмотр',
+  CUSTOM: 'Пользовательская',
 };
 
 const columns: GridColDef[] = [
@@ -44,8 +45,6 @@ const columns: GridColDef[] = [
     headerName: 'Название',
     width: 250,
     renderCell: (params) => {
-      // Используем name если есть, иначе пытаемся перевести code
-      const displayName = params.value || ROLE_NAME_MAPPING[params.row.code] || params.row.code;
       return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <SecurityIcon color="primary" fontSize="small" />
@@ -54,7 +53,7 @@ const columns: GridColDef[] = [
             to={`/permissions/roles/${params.row.id}`}
             underline="hover"
           >
-            {displayName}
+            {params.value}
           </MuiLink>
         </Box>
       );
@@ -62,12 +61,25 @@ const columns: GridColDef[] = [
   },
   { field: 'code', headerName: 'Код', width: 150 },
   {
-    field: 'level',
-    headerName: 'Уровень',
-    width: 120,
+    field: 'scope',
+    headerName: 'Область действия',
+    width: 150,
     renderCell: (params) => (
       <Chip
-        label={ROLE_LEVEL_LABELS[params.value] || params.value}
+        label={params.row.scope_display || ROLE_SCOPE_LABELS[params.value] || params.value}
+        color="primary"
+        size="small"
+        variant="outlined"
+      />
+    ),
+  },
+  {
+    field: 'category',
+    headerName: 'Категория',
+    width: 150,
+    renderCell: (params) => (
+      <Chip
+        label={params.row.category_display || ROLE_CATEGORY_LABELS[params.value] || params.value}
         color="info"
         size="small"
         variant="outlined"

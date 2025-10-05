@@ -32,20 +32,21 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SecurityIcon from '@mui/icons-material/Security';
 import InfoIcon from '@mui/icons-material/Info';
 
-const ROLE_LEVEL_LABELS: Record<string, string> = {
-  SYSTEM: 'Системный',
+// Области действия роли
+const ROLE_SCOPE_LABELS: Record<string, string> = {
+  SYSTEM: 'Вся система',
   COMPANY: 'Компания',
   DEPARTMENT: 'Отдел',
-  PERSONAL: 'Личный',
+  OWN: 'Только свои данные',
 };
 
-// Маппинг кодов ролей на русские названия
-const ROLE_NAME_MAPPING: Record<string, string> = {
-  'SYSTEM_ADMIN': 'Системный администратор',
-  'COMPANY_ADMIN': 'Администратор компании',
-  'DEPARTMENT_MANAGER': 'Руководитель отдела',
-  'MANAGER': 'Менеджер',
-  'VIEWER': 'Наблюдатель',
+// Категории ролей
+const ROLE_CATEGORY_LABELS: Record<string, string> = {
+  ADMINISTRATIVE: 'Административная',
+  MANAGEMENT: 'Управленческая',
+  OPERATIONAL: 'Операционная',
+  READONLY: 'Только просмотр',
+  CUSTOM: 'Пользовательская',
 };
 
 // Русские названия для action
@@ -171,10 +172,10 @@ export default function RoleDetailPage() {
         <SecurityIcon color="primary" sx={{ fontSize: 32 }} />
         <Box sx={{ flex: 1 }}>
           <Typography variant="h4">
-            {role.name || ROLE_NAME_MAPPING[role.code] || role.code}
+            {role.name}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Код: {role.code} • Уровень: {ROLE_LEVEL_LABELS[role.level] || role.level}
+            Код: {role.code} • Область: {role.scope_display || ROLE_SCOPE_LABELS[role.scope]} • Категория: {role.category_display || ROLE_CATEGORY_LABELS[role.category]}
           </Typography>
         </Box>
         <Button
@@ -219,7 +220,7 @@ export default function RoleDetailPage() {
                     Название
                   </Typography>
                   <Typography variant="body1">
-                    {role.name || ROLE_NAME_MAPPING[role.code] || role.code}
+                    {role.name}
                   </Typography>
                 </Box>
                 <Box>
@@ -230,11 +231,23 @@ export default function RoleDetailPage() {
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Уровень
+                    Область действия
                   </Typography>
-                  <Typography variant="body1">
+                  <Typography variant="body1" component="div">
                     <Chip
-                      label={ROLE_LEVEL_LABELS[role.level] || role.level}
+                      label={role.scope_display || ROLE_SCOPE_LABELS[role.scope]}
+                      color="primary"
+                      size="small"
+                    />
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Категория
+                  </Typography>
+                  <Typography variant="body1" component="div">
+                    <Chip
+                      label={role.category_display || ROLE_CATEGORY_LABELS[role.category]}
                       color="info"
                       size="small"
                       variant="outlined"
@@ -387,7 +400,7 @@ export default function RoleDetailPage() {
         <DialogTitle>Удалить роль?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" gutterBottom>
-            Вы уверены, что хотите удалить роль "{role.name || ROLE_NAME_MAPPING[role.code] || role.code}"?
+            Вы уверены, что хотите удалить роль "{role.name}"?
           </Typography>
           <Typography variant="body2" color="error">
             Это действие нельзя отменить.

@@ -78,12 +78,12 @@ export default function PaymentDetailPage() {
         <CardHeader title="Детали платежа" />
         <CardContent>
             <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <Typography><b>Сумма:</b> {Number(payment.amount).toLocaleString()} {payment.currency}</Typography>
                     <Typography><b>Тип:</b> {payment.payment_type}</Typography>
                     <Typography><b>Метод:</b> {payment.method}</Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <Typography><b>К оплате:</b> {new Date(payment.due_date).toLocaleDateString()}</Typography>
                     <Typography><b>Фактически оплачен:</b> {payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : 'Нет'}</Typography>
                     {payment.deal && <Typography><b>Сделка:</b> <MuiLink component={RouterLink} to={`/deals/${payment.deal.id}`}>№{payment.deal.id}</MuiLink></Typography>}

@@ -6,19 +6,19 @@ import { createTheme } from '@mui/material/styles';
 export const theme = createTheme({
   palette: {
     primary: {
-      main: '#D4A017', // Элегантный золотой/янтарный
+      main: '#D4A017', // Элегантный золотой/янтарный (из --color-primary)
     },
     secondary: {
-      main: '#2c3e50', // Глубокий серо-синий для контраста
+      main: '#2c3e50', // Глубокий серо-синий (из --color-secondary)
     },
     background: {
-      default: '#f4f6f8', // Очень светло-серый фон
-      paper: '#ffffff',
+      default: '#ffffff', // Белый фон (из --color-background-default)
+      paper: '#ffffff', // Белый (из --color-background-paper)
     },
     text: {
-        primary: '#34495e',
-        secondary: '#7f8c8d',
-    }
+      primary: '#212121', // Основной текст (из --color-text-primary)
+      secondary: '#757575', // Вторичный текст (из --color-text-secondary)
+    },
   },
   typography: {
     fontFamily: '"Inter", sans-serif',
@@ -38,7 +38,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', // --shadow-small
         },
       },
     },
@@ -46,7 +46,7 @@ export const theme = createTheme({
         styleOverrides: {
             root: {
                 borderRadius: 8,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', // --shadow-small
             }
         }
     },

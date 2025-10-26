@@ -10,6 +10,24 @@ class PermissionBackend:
     Кастомный backend для проверки разрешений
     """
 
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        """
+        Этот backend не используется для аутентификации.
+        Возвращаем None, чтобы Django использовал другие backends.
+        """
+        return None
+
+    def get_user(self, user_id):
+        """
+        Получение пользователя по ID (требуется для backend'а)
+        """
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
+
     def has_perm(self, user_obj, perm, obj=None):
         """
         Проверка разрешения пользователя
@@ -101,30 +119,47 @@ def get_filtered_queryset(user, queryset, resource_type):
         # Строим фильтр на основе разрешений
         filters = Q()
         
-        # Разрешение COMPANY - видит объекты своей компании
-        if has_company_view and profile.company:
-            # Проверяем наличие поля company у модели
-            if hasattr(queryset.model, 'company'):
-                filters |= Q(company=profile.company)
-            # Проверяем через created_by
-            elif hasattr(queryset.model, 'created_by'):
-                filters |= Q(created_by__profile__company=profile.company)
+        # ОСОБАЯ ЛОГИКА ДЛЯ КЛИЕНТОВ: Клиент виден только если на него есть заявка от компании
+        if resource_type == 'CLIENT':
+            if has_company_view and profile.company:
+                # Клиент виден если:
+                # 1. Хотя бы одна заявка создана пользователем из этой компании
+                filters |= Q(applications__created_by__profile__company=profile.company)
+            
+            if has_department_view and profile.department:
+                # Клиент виден если хотя бы одна заявка создана пользователем из этого отдела
+                filters |= Q(applications__created_by__profile__department=profile.department)
+            
+            if has_own_view:
+                # Клиент виден если хотя бы одна заявка создана этим пользователем
+                filters |= Q(applications__created_by=user)
         
-        # Разрешение DEPARTMENT - видит объекты своего отдела
-        if has_department_view and profile.department:
-            # Проверяем наличие поля department у модели
-            if hasattr(queryset.model, 'department'):
-                filters |= Q(department=profile.department)
-            # Проверяем через created_by
-            elif hasattr(queryset.model, 'created_by'):
-                filters |= Q(created_by__profile__department=profile.department)
-        
-        # Разрешение OWN - видит только свои объекты
-        if has_own_view:
-            if hasattr(queryset.model, 'created_by'):
-                filters |= Q(created_by=user)
-            elif hasattr(queryset.model, 'user'):
-                filters |= Q(user=user)
+        # СТАНДАРТНАЯ ЛОГИКА ДЛЯ ОСТАЛЬНЫХ РЕСУРСОВ
+        else:
+            # Разрешение COMPANY - видит объекты своей компании
+            if has_company_view and profile.company:
+                # Проверяем наличие поля company у модели
+                if hasattr(queryset.model, 'company'):
+                    filters |= Q(company=profile.company)
+                # Проверяем через created_by
+                elif hasattr(queryset.model, 'created_by'):
+                    filters |= Q(created_by__profile__company=profile.company)
+            
+            # Разрешение DEPARTMENT - видит объекты своего отдела
+            if has_department_view and profile.department:
+                # Проверяем наличие поля department у модели
+                if hasattr(queryset.model, 'department'):
+                    filters |= Q(department=profile.department)
+                # Проверяем через created_by
+                elif hasattr(queryset.model, 'created_by'):
+                    filters |= Q(created_by__profile__department=profile.department)
+            
+            # Разрешение OWN - видит только свои объекты
+            if has_own_view:
+                if hasattr(queryset.model, 'created_by'):
+                    filters |= Q(created_by=user)
+                elif hasattr(queryset.model, 'user'):
+                    filters |= Q(user=user)
         
         # Если нет ни одного разрешения - возвращаем пустой queryset
         if not filters:

@@ -162,7 +162,7 @@ export default function ApplicationDetailPage() {
                         <CardHeader avatar={<InterestsIcon />} title="Интересы клиента" />
                         <CardContent>
                             <Grid container spacing={2}>
-                              <Grid item xs={12} sm={6}>
+                              <Grid size={{ xs: 12, sm: 6 }}>
                                 <Controller
                                   name="interested_property_type"
                                   control={control}
@@ -181,13 +181,13 @@ export default function ApplicationDetailPage() {
                                   )}
                                 />
                               </Grid>
-                              <Grid item xs={12} sm={6}>
+                              <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField label="Причина отказа/нецелевой" fullWidth disabled value={app.rejection_reason?.name || ''} />
                               </Grid>
-                              <Grid item xs={12} sm={3}><TextField label="Площадь от (м²)" type="number" fullWidth disabled={!isEditable} {...register('min_area')} /></Grid>
-                              <Grid item xs={12} sm={3}><TextField label="Площадь до (м²)" type="number" fullWidth disabled={!isEditable} {...register('max_area')} /></Grid>
-                              <Grid item xs={12} sm={3}><TextField label="Этаж от" type="number" fullWidth disabled={!isEditable} {...register('min_floor')} /></Grid>
-                              <Grid item xs={12} sm={3}><TextField label="Этаж до" type="number" fullWidth disabled={!isEditable} {...register('max_floor')} /></Grid>
+                              <Grid size={{ xs: 12, sm: 3 }}><TextField label="Площадь от (м²)" type="number" fullWidth disabled={!isEditable} {...register('min_area')} /></Grid>
+                              <Grid size={{ xs: 12, sm: 3 }}><TextField label="Площадь до (м²)" type="number" fullWidth disabled={!isEditable} {...register('max_area')} /></Grid>
+                              <Grid size={{ xs: 12, sm: 3 }}><TextField label="Этаж от" type="number" fullWidth disabled={!isEditable} {...register('min_floor')} /></Grid>
+                              <Grid size={{ xs: 12, sm: 3 }}><TextField label="Этаж до" type="number" fullWidth disabled={!isEditable} {...register('max_floor')} /></Grid>
                             </Grid>
                         </CardContent>
                     </Card>

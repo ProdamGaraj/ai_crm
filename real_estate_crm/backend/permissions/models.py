@@ -362,10 +362,33 @@ class UserProfile(models.Model):
             is_active=True
         ).exists()
 
-    def has_permission_for_action(self, action, resource, scope='OWN'):
+    def has_permission_for_action(self, action, resource, scope=None):
         """
         Проверка наличия разрешения для конкретного действия над ресурсом
+        
+        Args:
+            action: Действие (VIEW, ADD, EDIT, DELETE)
+            resource: Ресурс (CLIENT, DEAL, и т.д.)
+            scope: Область действия (SYSTEM, COMPANY, DEPARTMENT, OWN) или None
+                   Если None - проверяет наличие разрешения с любым scope
+        
+        Returns:
+            bool: True если разрешение есть
         """
+        # Системный администратор имеет все разрешения
+        if self.is_system_admin:
+            return True
+        
+        # Если scope не указан, проверяем наличие разрешения с любым scope
+        if scope is None:
+            return self.roles.filter(
+                permissions__action=action,
+                permissions__resource=resource,
+                permissions__is_active=True,
+                is_active=True
+            ).exists()
+        
+        # Если scope указан, проверяем конкретное разрешение
         permission_code = f"{action}_{resource}_{scope}"
         return self.has_permission(permission_code)
 

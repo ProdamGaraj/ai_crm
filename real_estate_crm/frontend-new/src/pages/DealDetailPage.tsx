@@ -172,11 +172,11 @@ export default function DealDetailPage() {
                     <StepLabel onClick={() => setActiveStep(0)} sx={{cursor: 'pointer'}}>Информация о сделке</StepLabel>
                     <StepContent>
                       <Grid container spacing={2}>
-                          <Grid item xs={12} sm={6}>
+                          <Grid size={{ xs: 12, sm: 6 }}>
                               <Typography><b>Клиент:</b> <MuiLink component={RouterLink} to={`/clients/${deal.client.id}`}>{deal.client.full_name}</MuiLink></Typography>
                               <Typography><b>Объект:</b> {deal.property.property_type} №{deal.property.unit_number}, {deal.property.area} м²</Typography>
                           </Grid>
-                          <Grid item xs={12} sm={6}>
+                          <Grid size={{ xs: 12, sm: 6 }}>
                               <Typography><b>Начало брони:</b> {new Date(deal.booking_start_date).toLocaleString()}</Typography>
                               <Typography><b>Окончание брони:</b> {new Date(deal.booking_end_date).toLocaleString()}</Typography>
                           </Grid>
@@ -191,11 +191,11 @@ export default function DealDetailPage() {
                     <StepContent>
                       <form onSubmit={handleSubmit(handleFormSubmit)}>
                         <Grid container spacing={3}>
-                          <Grid item xs={12} sm={6} md={3}><TextField label="Стоимость (начальная)" value={Number(deal.initial_price).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
-                          <Grid item xs={12} sm={6} md={3}><TextField label="Цена за м² (начальная)" value={Number(deal.initial_price_per_sqm).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
-                          <Grid item xs={12} sm={6} md={3}><TextField label="Стоимость по договору" type="number" fullWidth {...register('contract_price')} disabled={isDealReadOnly} /></Grid>
-                          <Grid item xs={12}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>Применить скидки</Button> <Typography component="span">Применено: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || 'нет'}</Typography></Grid>
-                          <Grid item xs={12}><TextField label="Примечание к сделке" multiline rows={4} fullWidth {...register('notes')} disabled={isDealReadOnly} /></Grid>
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Стоимость (начальная)" value={Number(deal.initial_price).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Цена за м² (начальная)" value={Number(deal.initial_price_per_sqm).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Стоимость по договору" type="number" fullWidth {...register('contract_price')} disabled={isDealReadOnly} /></Grid>
+                          <Grid size={{ xs: 12 }}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>Применить скидки</Button> <Typography component="span">Применено: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || 'нет'}</Typography></Grid>
+                          <Grid size={{ xs: 12 }}><TextField label="Примечание к сделке" multiline rows={4} fullWidth {...register('notes')} disabled={isDealReadOnly} /></Grid>
                         </Grid>
                         <Stack direction="row" spacing={2} sx={{mt: 2}}>
                           <Button type="submit" variant="contained" disabled={updateDealMutation.isPending || isDealReadOnly}>Сохранить и перейти к графику</Button>
@@ -232,8 +232,8 @@ export default function DealDetailPage() {
                       <form onSubmit={handleSubmit(handleFormSubmit)}>
                           <Typography variant="h6" gutterBottom>Данные договора</Typography>
                           <Grid container spacing={2} sx={{mb: 2}}>
-                              <Grid item xs={12} md={6}><TextField fullWidth label="Номер договора" {...register('contract_number')} disabled={isDealReadOnly} /></Grid>
-                              <Grid item xs={12} md={6}><TextField fullWidth label="Дата договора" type="date" InputLabelProps={{ shrink: true }} {...register('contract_date')} disabled={isDealReadOnly}/></Grid>
+                              <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Номер договора" {...register('contract_number')} disabled={isDealReadOnly} /></Grid>
+                              <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Дата договора" type="date" InputLabelProps={{ shrink: true }} {...register('contract_date')} disabled={isDealReadOnly}/></Grid>
                           </Grid>
                           <Divider sx={{my: 3}}/>
 
@@ -246,9 +246,9 @@ export default function DealDetailPage() {
                                   <Typography variant="h6" gutterBottom>Подписанные документы</Typography>
                                   {deal.signed_document_scan && (<Alert severity="success" sx={{mb: 2}}>Подписанный документ загружен. <MuiLink href={deal.signed_document_scan} target="_blank" rel="noopener noreferrer">Посмотреть</MuiLink></Alert>)}
                                   <Grid container spacing={2} sx={{mb: 2}}>
-                                      <Grid item xs={12} md={4}><TextField fullWidth label="Загрузить скан" type="file" InputLabelProps={{ shrink: true }} {...register('signed_document_scan')} disabled={isDealReadOnly} /></Grid>
-                                      <Grid item xs={12} md={4}><TextField fullWidth label="Дата подписания клиентом" type="date" InputLabelProps={{ shrink: true }} {...register('client_signature_date')} disabled={isDealReadOnly} /></Grid>
-                                      <Grid item xs={12} md={4}><TextField fullWidth label="Дата подписания компанией" type="date" InputLabelProps={{ shrink: true }} {...register('company_signature_date')} disabled={isDealReadOnly} /></Grid>
+                                      <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Загрузить скан" type="file" InputLabelProps={{ shrink: true }} {...register('signed_document_scan')} disabled={isDealReadOnly} /></Grid>
+                                      <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Дата подписания клиентом" type="date" InputLabelProps={{ shrink: true }} {...register('client_signature_date')} disabled={isDealReadOnly} /></Grid>
+                                      <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Дата подписания компанией" type="date" InputLabelProps={{ shrink: true }} {...register('company_signature_date')} disabled={isDealReadOnly} /></Grid>
                                   </Grid>
                               </>
                           )}

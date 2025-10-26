@@ -72,14 +72,14 @@ export default function EmployeeReport() {
         }
     };
 
-    const separatorStyle = { borderRight: '1px solid rgba(224, 224, 224, 1)' };
+    const separatorStyle = { borderRight: '1px solid var(--color-border-default)' };
 
     return (
         <Stack spacing={3}>
             <Paper sx={{p: 2}}>
                 <form onSubmit={handleSubmit(onGenerateReport)}>
                     <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} sm={4}>
+                        <Grid size={{ xs: 12, sm: 4 }}>
                             <Controller name="year" control={control} render={({ field }) => (
                                 <FormControl fullWidth size="small">
                                     <InputLabel>Год</InputLabel>
@@ -89,7 +89,7 @@ export default function EmployeeReport() {
                                 </FormControl>
                             )} />
                         </Grid>
-                        <Grid item xs={12} sm={3}>
+                        <Grid size={{ xs: 12, sm: 3 }}>
                             <Controller name="period_type" control={control} render={({ field }) => (
                                 <FormControl fullWidth size="small">
                                     <InputLabel>Период</InputLabel>
@@ -99,7 +99,7 @@ export default function EmployeeReport() {
                                 </FormControl>
                             )} />
                         </Grid>
-                        <Grid item xs={12} sm={3}>
+                        <Grid size={{ xs: 12, sm: 3 }}>
                            <Controller name="period_value" control={control} render={({ field }) => (
                                 <FormControl fullWidth size="small" disabled={periodType === 'year'}>
                                     <InputLabel>Значение</InputLabel>
@@ -109,7 +109,7 @@ export default function EmployeeReport() {
                                 </FormControl>
                             )} />
                         </Grid>
-                        <Grid item xs={12} sm={2}>
+                        <Grid size={{ xs: 12, sm: 2 }}>
                             <Button type="submit" variant="contained" fullWidth>Сформировать</Button>
                         </Grid>
                     </Grid>
@@ -157,7 +157,7 @@ export default function EmployeeReport() {
                         </TableHead>
                         <TableBody>
                             {reportData.map((employee) => (
-                                <TableRow key={employee.employee_id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, ...(employee.employee_id === 'total' && {backgroundColor: '#f0f0f0'}) }}>
+                                <TableRow key={employee.employee_id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, ...(employee.employee_id === 'total' && {backgroundColor: 'var(--color-background-total)'}) }}>
                                     <TableCell component="th" scope="row" sx={separatorStyle}>
                                         <Typography sx={{fontWeight: employee.employee_id === 'total' ? 'bold' : 'normal'}}>
                                             {employee.employee_name}

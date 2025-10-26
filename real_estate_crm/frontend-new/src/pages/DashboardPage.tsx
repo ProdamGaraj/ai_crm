@@ -57,25 +57,25 @@ export default function DashboardPage() {
 
         {/* Блок KPI */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6} md={3}><KpiCard title="Новых клиентов сегодня" value={String(kpi.newClientsToday)} icon={<PeopleIcon />} /></Grid>
-            <Grid item xs={12} sm={6} md={3}><KpiCard title="Новых заявок сегодня" value={String(kpi.newApplicationsToday)} icon={<AssignmentIcon />} color="success.main" /></Grid>
-            <Grid item xs={12} sm={6} md={3}><KpiCard title="Продажи за месяц" value={`${kpi.monthlySales.toLocaleString()} у.е.`} icon={<MonetizationOnIcon />} color="info.main"/></Grid>
-            <Grid item xs={12} sm={6} md={3}><KpiCard title="Просроченные платежи" value={`${kpi.overduePayments.toLocaleString()} у.е.`} icon={<EventBusyIcon />} color="error.main"/></Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}><KpiCard title="Новых клиентов сегодня" value={String(kpi.newClientsToday)} icon={<PeopleIcon />} /></Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}><KpiCard title="Новых заявок сегодня" value={String(kpi.newApplicationsToday)} icon={<AssignmentIcon />} color="success.main" /></Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}><KpiCard title="Продажи за месяц" value={`${kpi.monthlySales.toLocaleString()} у.е.`} icon={<MonetizationOnIcon />} color="info.main"/></Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}><KpiCard title="Просроченные платежи" value={`${kpi.overduePayments.toLocaleString()} у.е.`} icon={<EventBusyIcon />} color="error.main"/></Grid>
         </Grid>
 
         {/* Блок воронок и графиков */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={8}>
+            <Grid size={{ xs: 12, md: 8 }}>
                 <ChartPlaceholder title="Динамика заявок за неделю" icon={<BarChartIcon sx={{ fontSize: 80 }} />} />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
                  <ChartPlaceholder title="Источники заявок" icon={<DonutLargeIcon sx={{ fontSize: 80 }} />} />
             </Grid>
         </Grid>
 
          {/* Блок менеджеров и встреч */}
         <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
                  <Paper variant="outlined">
                     <CardHeader
                         avatar={<LeaderboardIcon />}
@@ -93,7 +93,7 @@ export default function DashboardPage() {
                     </CardContent>
                  </Paper>
             </Grid>
-             <Grid item xs={12} md={6}>
+             <Grid size={{ xs: 12, md: 6 }}>
                  <Paper variant="outlined">
                     <CardHeader
                         avatar={<EventIcon />}

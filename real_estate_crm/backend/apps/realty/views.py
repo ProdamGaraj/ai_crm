@@ -7,6 +7,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from permissions.permissions import DiscountPermission
 from .serializers import (
     PublicProjectListSerializer, PublicProjectDetailSerializer, PublicBuildingDetailSerializer
 )
@@ -277,7 +278,7 @@ class DiscountListView(generics.ListCreateAPIView):
     queryset = Discount.objects.prefetch_related('buildings').all()
     # Используем сериализатор для СПИСКА
     serializer_class = DiscountListSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, DiscountPermission]
 
     def perform_create(self, serializer):
         instance = serializer.save(created_by=self.request.user)
@@ -293,7 +294,7 @@ class DiscountDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Discount.objects.all()
     # Используем ДЕТАЛЬНЫЙ сериализатор
     serializer_class = DiscountDetailSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, DiscountPermission]
 
     def perform_update(self, serializer):
         # --- Логика логирования при обновлении ---

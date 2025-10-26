@@ -57,7 +57,7 @@ export default function MeetingSummary() {
                     Object.entries(value).filter(([_, v]) => v !== '' && v !== null)
                 );
                 setFilters(cleanedFilters as MeetingSummaryFilters);
-            }, 500);
+            }, 300);
             return () => clearTimeout(timer);
         });
         return () => subscription.unsubscribe();
@@ -85,11 +85,11 @@ export default function MeetingSummary() {
     return (
         <Stack spacing={2}>
             <Grid container spacing={2}>
-                <Grid item xs={12} md={9}>
+                <Grid size={{ xs: 12, md: 9 }}>
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
                         <Grid container spacing={2} alignItems="center">
-                             <Grid item xs={12} sm={4}>
+                             <Grid size={{ xs: 12, sm: 4 }}>
                                 <Controller
                                     name="group_by"
                                     control={control}
@@ -105,27 +105,27 @@ export default function MeetingSummary() {
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={6} sm={4}>
+                            <Grid size={{ xs: 6, sm: 4 }}>
                                 <Controller name="planned_date_after" control={control} render={({ field }) => (
                                     <TextField {...field} label="План от" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
                                 )}/>
                             </Grid>
-                            <Grid item xs={6} sm={4}>
+                            <Grid size={{ xs: 6, sm: 4 }}>
                                 <Controller name="planned_date_before" control={control} render={({ field }) => (
                                     <TextField {...field} label="План до" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
                                 )}/>
                             </Grid>
-                            <Grid item xs={6} sm={4}>
+                            <Grid size={{ xs: 6, sm: 4 }}>
                                 <Controller name="actual_date_after" control={control} render={({ field }) => (
                                     <TextField {...field} label="Факт от" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
                                 )}/>
                             </Grid>
-                             <Grid item xs={6} sm={4}>
+                             <Grid size={{ xs: 6, sm: 4 }}>
                                 <Controller name="actual_date_before" control={control} render={({ field }) => (
                                     <TextField {...field} label="Факт до" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
                                 )}/>
                             </Grid>
-                             <Grid item xs={12} sm={4}>
+                             <Grid size={{ xs: 12, sm: 4 }}>
                                 <Button variant="contained" onClick={handleDownload} fullWidth>
                                     Выгрузить в Excel
                                 </Button>
@@ -133,7 +133,7 @@ export default function MeetingSummary() {
                         </Grid>
                     </Paper>
                 </Grid>
-                <Grid item xs={12} md={3}>
+                <Grid size={{ xs: 12, md: 3 }}>
                      <KpiCard
                         title="Просроченные встречи"
                         value={data?.overdue_count || 0}

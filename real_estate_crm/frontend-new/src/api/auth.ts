@@ -47,6 +47,6 @@ export const passwordResetConfirm = async (data: PasswordResetConfirm): Promise<
 
 // Обновление access токена через refresh токен
 export const refreshAccessToken = async (refreshToken: string): Promise<{ access: string; refresh: string }> => {
-  const response = await apiClient.post('/api/token/refresh/', { refresh: refreshToken });
+  const response = await apiClient.post('/token/refresh/', { refresh: refreshToken });
   return response.data;
 };

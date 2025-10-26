@@ -105,10 +105,10 @@ export default function SettingsPage() {
         <TabPanel value={tabValue} index={4}>
           <Typography variant="h6" sx={{ mb: 2 }}>Причины отказа / нецелевых заявок</Typography>
           <Grid container spacing={4}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <ReasonManager title="Причины для статуса «Нецелевая»" reasonType="JUNK" />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <ReasonManager title="Причины для статуса «Отказ»" reasonType="REJECTED" />
             </Grid>
           </Grid>
@@ -123,10 +123,10 @@ export default function SettingsPage() {
         {/* Вкладка "Финансы" */}
         <TabPanel value={tabValue} index={6}>
            <Grid container spacing={4}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <PaymentTypeManager />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <BeneficiaryAccountManager />
             </Grid>
           </Grid>
@@ -135,10 +135,10 @@ export default function SettingsPage() {
         {/* Вкладка "Шаблоны" */}
         <TabPanel value={tabValue} index={7}>
           <Grid container spacing={4}>
-            <Grid item xs={12} md={7}>
+            <Grid size={{ xs: 12, md: 7 }}>
               <TemplateManager />
             </Grid>
-            <Grid item xs={12} md={5}>
+            <Grid size={{ xs: 12, md: 5 }}>
               <TemplateTagsCheatSheet />
             </Grid>
           </Grid>

@@ -50,7 +50,7 @@ export default function ClientsPage() {
     const subscription = watch((value) => {
       const timer = setTimeout(() => {
         setFilters(value);
-      }, 500);
+      }, 300);
       return () => clearTimeout(timer);
     });
     return () => subscription.unsubscribe();
@@ -79,10 +79,10 @@ export default function ClientsPage() {
       <Paper sx={{ p: 2 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={3}><TextField label="Поиск по ФИО" fullWidth size="small" {...register('full_name')} /></Grid>
-          <Grid item xs={12} sm={6} md={3}><TextField label="Поиск по телефону" fullWidth size="small" {...register('phone_number')} /></Grid>
-          <Grid item xs={12} sm={6} md={3}><TextField label="Поиск по Email" fullWidth size="small" {...register('email')} /></Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Поиск по ФИО" fullWidth size="small" {...register('full_name')} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Поиск по телефону" fullWidth size="small" {...register('phone_number')} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Поиск по Email" fullWidth size="small" {...register('email')} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Controller
               name="status"
               control={control}
@@ -100,12 +100,12 @@ export default function ClientsPage() {
               )}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}><TextField label="ИНН" fullWidth size="small" {...register('inn')} /></Grid>
-          <Grid item xs={12} sm={6} md={3}><TextField label="ПИНФЛ" fullWidth size="small" {...register('pinfl')} /></Grid>
-          <Grid item xs={6} sm={3} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="ИНН" fullWidth size="small" {...register('inn')} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="ПИНФЛ" fullWidth size="small" {...register('pinfl')} /></Grid>
+          <Grid size={{ xs: 6, sm: 3, md: 3 }}>
             <TextField label="Дата создания (от)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_after')} />
           </Grid>
-          <Grid item xs={6} sm={3} md={3}>
+          <Grid size={{ xs: 6, sm: 3, md: 3 }}>
             <TextField label="Дата создания (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_before')} />
           </Grid>
         </Grid>

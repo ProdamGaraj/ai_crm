@@ -16,7 +16,7 @@ import {
   Divider,
 } from '@mui/material';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import EventIcon from '@mui/icons-material/Event';
 // Иконки
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -31,26 +31,58 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuthStore } from '../store/authStore';
+import { hasAnyViewPermission, isSystemAdmin } from '../utils/permissions';
+import type { ResourceType } from '../utils/permissions';
 
 const drawerWidth = 240;
 
-const navItems = [
+interface NavItem {
+  text: string;
+  icon: React.ReactElement;
+  path: string;
+  resource?: ResourceType; // Ресурс для проверки прав
+  requireAdmin?: boolean; // Требуется ли админ
+}
+
+const navItems: NavItem[] = [
   { text: 'Дашборд', icon: <DashboardIcon />, path: '/' },
-  { text: 'Клиенты', icon: <PeopleIcon />, path: '/clients' },
-  { text: 'Заявки', icon: <AssignmentIcon />, path: '/applications' },
-  { text: 'Встречи', icon: <EventIcon />, path: '/meetings' },
-  { text: 'Сделки', icon: <BusinessCenterIcon />, path: '/deals' },
-  { text: 'Проекты', icon: <AccountBalanceIcon />, path: '/projects' },
-  { text: 'Финансы', icon: <PaymentsIcon />, path: '/finances' },
+  { text: 'Клиенты', icon: <PeopleIcon />, path: '/clients', resource: 'CLIENT' },
+  { text: 'Заявки', icon: <AssignmentIcon />, path: '/applications', resource: 'APPLICATION' },
+  { text: 'Встречи', icon: <EventIcon />, path: '/meetings', resource: 'MEETING' },
+  { text: 'Сделки', icon: <BusinessCenterIcon />, path: '/deals', resource: 'DEAL' },
+  { text: 'Проекты', icon: <AccountBalanceIcon />, path: '/projects', resource: 'PROJECT' },
+  { text: 'Финансы', icon: <PaymentsIcon />, path: '/finances', resource: 'PAYMENT' },
   { text: 'Отчеты', icon: <AssessmentIcon />, path: '/reports' },
-  { text: 'Скидки', icon: <LocalOfferIcon />, path: '/discounts' },
-  { text: 'Настройки', icon: <SettingsIcon />, path: '/settings?tab=companies' },
+  { text: 'Скидки', icon: <LocalOfferIcon />, path: '/discounts', resource: 'DISCOUNT' },
+  { text: 'Настройки', icon: <SettingsIcon />, path: '/settings?tab=companies', requireAdmin: true },
 ];
 
 export default function RootLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  // Фильтруем пункты меню на основе прав доступа
+  const visibleNavItems = useMemo(() => {
+    return navItems.filter(item => {
+      // Дашборд и отчеты доступны всем
+      if (!item.resource && !item.requireAdmin) {
+        return true;
+      }
+
+      // Проверяем требование администратора
+      if (item.requireAdmin) {
+        return isSystemAdmin(user);
+      }
+
+      // Проверяем наличие VIEW разрешения на ресурс
+      if (item.resource) {
+        return hasAnyViewPermission(user, item.resource);
+      }
+
+      return true;
+    });
+  }, [user]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -87,7 +119,7 @@ export default function RootLayout() {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', bgcolor: 'background.default', minHeight: '100vh' }}>
       {/* AppBar с информацией о пользователе */}
       <AppBar 
         position="fixed" 
@@ -171,7 +203,7 @@ export default function RootLayout() {
         <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <ListItem key={item.text} disablePadding>
                 <ListItemButton component={Link} to={item.path}>
                   <ListItemIcon>{item.icon}</ListItemIcon>
@@ -184,7 +216,7 @@ export default function RootLayout() {
       </Drawer>
 
       {/* Основной контент */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: 3, bgcolor: 'background.default' }}>
         <Toolbar />
         <Outlet />
       </Box>

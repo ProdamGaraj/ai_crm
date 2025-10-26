@@ -69,7 +69,7 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     const subscription = watchBuildingFilter((value) => {
-      const timer = setTimeout(() => { setBuildingFilters({ search: value.search }); }, 500);
+      const timer = setTimeout(() => { setBuildingFilters({ search: value.search }); }, 300);
       return () => clearTimeout(timer);
     });
     return () => subscription.unsubscribe();
@@ -177,10 +177,10 @@ export default function ProjectDetailPage() {
                 <CardHeader title="Основная информация" avatar={<BusinessIcon />} />
                 <CardContent>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="Название проекта" {...register('name')} /></Grid>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="Адрес" {...register('address')} /></Grid>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="Плановая дата кадастра" type="date" InputLabelProps={{ shrink: true }} {...register('cadastre_date_plan')} /></Grid>
-                        <Grid item xs={12}><TextField fullWidth multiline rows={4} label="Описание" {...register('description')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Название проекта" {...register('name')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Адрес" {...register('address')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Плановая дата кадастра" type="date" InputLabelProps={{ shrink: true }} {...register('cadastre_date_plan')} /></Grid>
+                        <Grid size={{ xs: 12 }}><TextField fullWidth multiline rows={4} label="Описание" {...register('description')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
@@ -189,9 +189,9 @@ export default function ProjectDetailPage() {
                 <CardHeader title="Уникальные торговые предложения (УТП)" avatar={<StarIcon />} />
                 <CardContent>
                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={4}><TextField fullWidth label="УТП 1" {...register('usp_1')} /></Grid>
-                        <Grid item xs={12} md={4}><TextField fullWidth label="УТП 2" {...register('usp_2')} /></Grid>
-                        <Grid item xs={12} md={4}><TextField fullWidth label="УТП 3" {...register('usp_3')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="УТП 1" {...register('usp_1')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="УТП 2" {...register('usp_2')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="УТП 3" {...register('usp_3')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
@@ -200,7 +200,7 @@ export default function ProjectDetailPage() {
                 <CardHeader title="Юридическая информация" avatar={<ArticleIcon />} />
                 <CardContent>
                     <Grid container spacing={2}>
-                        <Grid item xs={12}><TextField fullWidth multiline rows={3} label="Реквизиты застройщика" {...register('developer_details')} /></Grid>
+                        <Grid size={{ xs: 12 }}><TextField fullWidth multiline rows={3} label="Реквизиты застройщика" {...register('developer_details')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
@@ -229,7 +229,7 @@ export default function ProjectDetailPage() {
         </Button>
         <Grid container spacing={2}>
             {project.gallery_images.map((image) => (
-                <Grid item key={image.id} xs={12} sm={6} md={4} lg={3}>
+                <Grid key={image.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <Card>
                         <CardMedia component="img" height="140" image={image.image} alt={image.caption || `Image ${image.id}`} />
                         <CardActions>

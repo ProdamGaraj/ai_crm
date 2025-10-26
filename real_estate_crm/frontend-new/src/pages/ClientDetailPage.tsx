@@ -139,11 +139,11 @@ export default function ClientDetailPage() {
               <CardHeader avatar={<PersonIcon />} title="Личные данные" />
               <CardContent>
                 <Grid container spacing={2}>
-                   <Grid item xs={12} md={4}><TextField fullWidth label="ФИО" {...register('full_name')} /></Grid>
-                  <Grid item xs={12} md={4}><TextField fullWidth label="Email" type="email" {...register('email')} /></Grid>
-                  <Grid item xs={12} md={4}><TextField fullWidth label="Дата рождения" type="date" InputLabelProps={{ shrink: true }} {...register('date_of_birth')} /></Grid>
+                   <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="ФИО" {...register('full_name')} /></Grid>
+                  <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Email" type="email" {...register('email')} /></Grid>
+                  <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Дата рождения" type="date" InputLabelProps={{ shrink: true }} {...register('date_of_birth')} /></Grid>
 
-                  <Grid item xs={12} md={4}>
+                  <Grid size={{ xs: 12, md: 4 }}>
                       <Controller
                         name="status"
                         control={control}
@@ -160,7 +160,7 @@ export default function ClientDetailPage() {
                         )}
                       />
                   </Grid>
-                  <Grid item xs={12} md={8}>
+                  <Grid size={{ xs: 12, md: 8 }}>
                       <TextField fullWidth label="Комментарий" multiline rows={1} {...register('comment')} />
                   </Grid>
                 </Grid>
@@ -195,13 +195,13 @@ export default function ClientDetailPage() {
                 <CardHeader avatar={<ArticleIcon />} title="Паспортные данные и адреса" />
                 <CardContent>
                     <Grid container spacing={2}>
-                        <Grid item xs={6} md={3}><TextField fullWidth label="Серия паспорта" {...register('passport_series')} /></Grid>
-                        <Grid item xs={6} md={3}><TextField fullWidth label="Номер паспорта" {...register('passport_number')} /></Grid>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="Кем выдан паспорт" {...register('passport_issued_by')} /></Grid>
-                        <Grid item xs={6} md={3}><TextField fullWidth label="ИНН" {...register('inn')} /></Grid>
-                        <Grid item xs={6} md={3}><TextField fullWidth label="ПИНФЛ" {...register('pinfl')} /></Grid>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="Адрес прописки" {...register('registration_address')} /></Grid>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="Расчетный адрес" {...register('billing_address')} /></Grid>
+                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth label="Серия паспорта" {...register('passport_series')} /></Grid>
+                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth label="Номер паспорта" {...register('passport_number')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Кем выдан паспорт" {...register('passport_issued_by')} /></Grid>
+                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth label="ИНН" {...register('inn')} /></Grid>
+                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth label="ПИНФЛ" {...register('pinfl')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Адрес прописки" {...register('registration_address')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Расчетный адрес" {...register('billing_address')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>

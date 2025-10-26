@@ -55,7 +55,7 @@ export default function PasswordResetRequestPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'var(--gradient-auth)',
           padding: 2,
         }}
       >
@@ -97,7 +97,7 @@ export default function PasswordResetRequestPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'var(--gradient-auth)',
         padding: 2,
       }}
     >

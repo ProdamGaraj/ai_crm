@@ -40,8 +40,8 @@ export default function ProjectsPage() {
   useEffect(() => {
     const subscription = watch((value) => {
       const timer = setTimeout(() => {
-        setFilters({ search: value.search });
-      }, 500);
+        setFilters(value);
+      }, 300);
       return () => clearTimeout(timer);
     });
     return () => subscription.unsubscribe();

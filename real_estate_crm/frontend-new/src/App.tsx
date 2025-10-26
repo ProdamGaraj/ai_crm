@@ -26,6 +26,7 @@ import CompanyDetailPage from './pages/permissions/CompanyDetailPage';
 import RoleDetailPage from './pages/permissions/RoleDetailPage';
 // Auth
 import ProtectedRoute from './components/ProtectedRoute';
+import PermissionRoute from './components/PermissionRoute';
 
 // Компонент-обертка для защиты маршрутов (используя новую систему авторизации)
 const ProtectedRouteWrapper = () => {
@@ -71,9 +72,30 @@ const router = createBrowserRouter([
           { path: 'finances', element: <FinancesPage /> },
           { path: 'finances/:paymentId', element: <PaymentDetailPage /> },
           { path: 'reports', element: <ReportsPage /> },
-          { path: 'settings', element: <SettingsPage /> },
-          { path: 'discounts', element: <DiscountsPage /> },
-          { path: 'discounts/:discountId', element: <DiscountDetailPage /> },
+          { 
+            path: 'settings', 
+            element: (
+              <PermissionRoute requireAdmin>
+                <SettingsPage />
+              </PermissionRoute>
+            ) 
+          },
+          { 
+            path: 'discounts', 
+            element: (
+              <PermissionRoute resource="DISCOUNT" action="VIEW">
+                <DiscountsPage />
+              </PermissionRoute>
+            ) 
+          },
+          { 
+            path: 'discounts/:discountId', 
+            element: (
+              <PermissionRoute resource="DISCOUNT" action="VIEW">
+                <DiscountDetailPage />
+              </PermissionRoute>
+            ) 
+          },
           // Permissions routes
           { path: 'permissions/companies/:id', element: <CompanyDetailPage /> },
           { path: 'permissions/roles/:id', element: <RoleDetailPage /> },

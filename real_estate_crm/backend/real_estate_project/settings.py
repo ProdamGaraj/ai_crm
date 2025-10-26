@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 from datetime import timedelta
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!l5n0q200=_=x@&(n=mo65t$#))vha%zdlo8gqk$w+9^yg9^(t'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-!l5n0q200=_=x@&(n=mo65t$#))vha%zdlo8gqk$w+9^yg9^(t')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'c0s9w1gq-8000.euw.devtunnels.ms'  # Tunnel для бэкенда (на всякий случай)
+]
 
 
 # Application definition
@@ -87,8 +92,12 @@ WSGI_APPLICATION = 'real_estate_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME', default='crm_database'),
+        'USER': config('DB_USER', default='crm_user'),
+        'PASSWORD': config('DB_PASSWORD', default='crm_password'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
 
@@ -137,15 +146,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:5173",  # Ваш фронтенд
+    "http://127.0.0.1:5173",  # Альтернативный адрес
     "http://localhost:5174",
     "http://localhost:5175",  # Для друга
     "http://localhost:5176",  # Дополнительный порт
     'https://5mpxwrp0-5174.euw.devtunnels.ms',
+    'https://c0s9w1gq-5173.euw.devtunnels.ms',
+    'https://c0s9w1gq-8000.euw.devtunnels.ms'  # Backend tunnel
 ]
 
 # Дополнительные настройки CORS для работы с JWT
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False  # Явно указываем, что разрешаем только указанные origins
+
+# Для отладки CORS - временно включите если проблема не решится
+# CORS_ALLOW_ALL_ORIGINS = True  # Раскомментируйте для отладки
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -156,6 +173,15 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
 REST_FRAMEWORK = {
@@ -173,8 +199,8 @@ AUTHENTICATION_BACKENDS = [
     'permissions.backends.PermissionBackend',  # Наш кастомный backend
 ]
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),      # access-токен будет жить 1 час
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),       # refresh-токен будет жить 7 дней
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=5),       # access-токен будет жить 5 часов (для разработки)
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),      # refresh-токен будет жить 30 дней
     "ROTATE_REFRESH_TOKENS": True,                     # При обновлении refresh-токен также будет заменяться на новый
     "BLACKLIST_AFTER_ROTATION": True,                  # Старый refresh-токен будет добавлен в черный список
     "UPDATE_LAST_LOGIN": True,                         # Обновлять поле last_login у пользователя при входе

@@ -54,8 +54,8 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
               {floors.map((floor) => (
-                <Box key={floor} sx={{ display: 'flex', borderBottom: '1px solid #eee' }}>
-                  <Box sx={{ width: '50px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px solid #eee' }}>
+                <Box key={floor} sx={{ display: 'flex', borderBottom: '1px solid var(--color-border-light)' }}>
+                  <Box sx={{ width: '50px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px solid var(--color-border-light)' }}>
                     <Typography variant="subtitle2">{floor}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 1, p: 1 }}>
@@ -75,7 +75,7 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
                               alignItems: 'center',
                               justifyContent: 'center',
                               cursor: 'pointer',
-                              border: '1px solid rgba(0,0,0,0.1)',
+                              border: '1px solid var(--color-border-dark)',
                               transition: 'transform 0.1s ease-in-out',
                               '&:hover': {
                                 opacity: 0.8,

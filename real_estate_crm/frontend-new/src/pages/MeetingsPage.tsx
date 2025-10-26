@@ -60,7 +60,7 @@ export default function MeetingsPage() {
 
     useEffect(() => {
         const subscription = watch((value) => {
-            const timer = setTimeout(() => setFilters(value), 500);
+            const timer = setTimeout(() => setFilters(value), 300);
             return () => clearTimeout(timer);
         });
         return () => subscription.unsubscribe();
@@ -136,13 +136,13 @@ export default function MeetingsPage() {
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
                         <Grid container spacing={2} alignItems="center">
-                            <Grid item xs={12} sm={6} md={3}>
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Controller name="client_name" control={control} render={({ field }) => (
                                         <TextField {...field} onChange={field.onChange} value={field.value || ''} label="Поиск по клиенту" fullWidth size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Controller name="executor_id" control={control} render={({ field }) => (
                                         <Autocomplete
                                             options={users || []}
@@ -154,7 +154,7 @@ export default function MeetingsPage() {
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6} md={2}>
+                            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
                                 <Controller name="status" control={control} render={({ field }) => (
                                     <FormControl fullWidth size="small">
                                       <InputLabel>Статус</InputLabel>
@@ -168,10 +168,10 @@ export default function MeetingsPage() {
                                   )}
                                 />
                             </Grid>
-                            <Grid item xs={6} sm={3} md={2}>
+                            <Grid size={{ xs: 6, sm: 3, md: 2 }}>
                                 <TextField label="План от" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('planned_date_after')} />
                             </Grid>
-                            <Grid item xs={6} sm={3} md={2}>
+                            <Grid size={{ xs: 6, sm: 3, md: 2 }}>
                                 <TextField label="План до" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('planned_date_before')} />
                             </Grid>
                         </Grid>

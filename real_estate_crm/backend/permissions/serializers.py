@@ -67,6 +67,7 @@ class PermissionSerializer(serializers.ModelSerializer):
 class RoleListSerializer(serializers.ModelSerializer):
     scope_display = serializers.CharField(source='get_scope_display', read_only=True)
     category_display = serializers.CharField(source='get_category_display', read_only=True)
+    permissions = PermissionSerializer(many=True, read_only=True)
     permissions_count = serializers.SerializerMethodField()
     users_count = serializers.SerializerMethodField()
     
@@ -76,7 +77,7 @@ class RoleListSerializer(serializers.ModelSerializer):
             'id', 'name', 'code', 'description',
             'scope', 'scope_display',
             'category', 'category_display',
-            'permissions_count', 'users_count',
+            'permissions', 'permissions_count', 'users_count',
             'is_system', 'is_active',
             'created_at', 'updated_at'
         ]
@@ -150,6 +151,7 @@ class UserProfileListSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
     department_name = serializers.CharField(source='department.name', read_only=True, allow_null=True)
+    roles = RoleListSerializer(many=True, read_only=True)
     roles_names = serializers.SerializerMethodField()
     
     class Meta:
@@ -157,7 +159,7 @@ class UserProfileListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'company', 'company_name',
             'department', 'department_name',
-            'roles_names', 'position', 'phone',
+            'roles', 'roles_names', 'position', 'phone',
             'is_system_admin', 'is_active',
             'created_at', 'updated_at'
         ]

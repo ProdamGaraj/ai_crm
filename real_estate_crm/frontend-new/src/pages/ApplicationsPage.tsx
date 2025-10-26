@@ -85,7 +85,7 @@ export default function ApplicationsPage() {
     const subscription = watch((value) => {
       const timer = setTimeout(() => {
         setFilters(value);
-      }, 500); // Задержка в 500 мс для предотвращения частых запросов
+      }, 300); // Задержка в 300 мс для предотвращения частых запросов
       return () => clearTimeout(timer);
     });
     return () => subscription.unsubscribe();
@@ -114,7 +114,7 @@ export default function ApplicationsPage() {
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
               <Tab label="Список заявок" />
               <Tab label="Сводная таблица" />
           </Tabs>
@@ -126,7 +126,7 @@ export default function ApplicationsPage() {
             <Paper sx={{ p: 2 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                   <Controller
                     name="status"
                     control={control}
@@ -146,7 +146,7 @@ export default function ApplicationsPage() {
                     )}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                    <Controller
                     name="source"
                     control={control}
@@ -165,12 +165,12 @@ export default function ApplicationsPage() {
                     )}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6} md={3}><TextField type="number" label="ID Клиента" fullWidth size="small" {...register('client_id')} /></Grid>
-                <Grid item xs={12} sm={6} md={3}><TextField type="number" label="ID Проекта" fullWidth size="small" {...register('interested_projects')} /></Grid>
-                 <Grid item xs={6} sm={3} md={3}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label="ID Клиента" fullWidth size="small" {...register('client_id')} /></Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label="ID Проекта" fullWidth size="small" {...register('interested_projects')} /></Grid>
+                 <Grid size={{ xs: 6, sm: 3, md: 3 }}>
                   <TextField label="Дата создания (от)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_after')} />
                 </Grid>
-                <Grid item xs={6} sm={3} md={3}>
+                <Grid size={{ xs: 6, sm: 3, md: 3 }}>
                   <TextField label="Дата создания (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_before')} />
                 </Grid>
               </Grid>

@@ -3,10 +3,39 @@ import { refreshAccessToken } from './auth';
 
 const apiClient = axios.create({
   baseURL: 'http://127.0.0.1:8000/api',
+  // baseURL: 'https://c0s9w1gq-8000.euw.devtunnels.ms/api',
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Функция для декодирования JWT токена
+const decodeJWT = (token: string) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error decoding JWT:', error);
+    return null;
+  }
+};
+
+// Функция для проверки истечения токена (обновляем за 5 минут до истечения)
+const isTokenExpiringSoon = (token: string): boolean => {
+  const decoded = decodeJWT(token);
+  if (!decoded || !decoded.exp) return true;
+  
+  const expirationTime = decoded.exp * 1000; // Конвертируем в миллисекунды
+  const currentTime = Date.now();
+  const timeUntilExpiration = expirationTime - currentTime;
+  
+  // Обновляем токен за 5 минут до истечения (300000 мс)
+  return timeUntilExpiration < 300000;
+};
 
 // Функция для получения токенов из localStorage (где Zustand их хранит)
 const getAuthTokens = () => {
@@ -49,10 +78,25 @@ const clearAuthTokens = () => {
   }
 };
 
-// Перехватчик ЗАПРОСОВ (добавляет токен в заголовок)
+// Перехватчик ЗАПРОСОВ (добавляет токен в заголовок и проактивно обновляет его)
 apiClient.interceptors.request.use(
-  (config) => {
-    const { accessToken } = getAuthTokens();
+  async (config) => {
+    const { accessToken, refreshToken } = getAuthTokens();
+    
+    // Проверяем, нужно ли обновить токен заранее
+    if (accessToken && refreshToken && isTokenExpiringSoon(accessToken) && !config.url?.includes('/token/refresh/')) {
+      try {
+        console.log('Проактивное обновление токена...');
+        const response = await refreshAccessToken(refreshToken);
+        setAuthTokens(response.access, response.refresh || refreshToken);
+        config.headers.Authorization = `Bearer ${response.access}`;
+        return config;
+      } catch (error) {
+        console.error('Ошибка проактивного обновления токена:', error);
+        // Продолжаем с текущим токеном, если обновление не удалось
+      }
+    }
+    
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }

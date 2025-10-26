@@ -231,9 +231,9 @@ export default function BuildingDetailPage() {
                 <CardHeader title="Основная информация" avatar={<BusinessIcon />} />
                 <CardContent>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} md={4}><TextField fullWidth label="Название/Номер" {...register('name')} /></Grid>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="Плановая дата кадастра" type="date" InputLabelProps={{ shrink: true }} {...register('cadastre_date_plan')} /></Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Название/Номер" {...register('name')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Плановая дата кадастра" type="date" InputLabelProps={{ shrink: true }} {...register('cadastre_date_plan')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <Controller name="status" control={control} defaultValue={building.status || ''} render={({ field }) => (
                                 <FormControl fullWidth><InputLabel>Статус</InputLabel>
                                 <Select {...field} label="Статус">
@@ -244,7 +244,7 @@ export default function BuildingDetailPage() {
                                 </Select></FormControl>
                             )}/>
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid size={{ xs: 12, md: 4 }}>
                             <Controller name="building_type_id" control={control} defaultValue={building.building_type?.id || ''} render={({ field }) => (
                                 <FormControl fullWidth><InputLabel>Тип дома</InputLabel>
                                 <Select {...field} label="Тип дома">
@@ -252,10 +252,10 @@ export default function BuildingDetailPage() {
                                 </Select></FormControl>
                             )}/>
                         </Grid>
-                        <Grid item xs={12} md={4}><TextField fullWidth label="Кол-во этажей" type="number" {...register('floors_count')} /></Grid>
-                        <Grid item xs={12} md={4}><TextField fullWidth label="Высота потолков (м)" {...register('ceiling_height')} /></Grid>
-                        <Grid item xs={12} md={4}><TextField fullWidth label="Материал" {...register('material')} /></Grid>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="Дата старта продаж" type="date" InputLabelProps={{ shrink: true }} {...register('sales_start_date')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Кол-во этажей" type="number" {...register('floors_count')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Высота потолков (м)" {...register('ceiling_height')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Материал" {...register('material')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Дата старта продаж" type="date" InputLabelProps={{ shrink: true }} {...register('sales_start_date')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
@@ -264,8 +264,8 @@ export default function BuildingDetailPage() {
                 <CardHeader title="Уникальные торговые предложения (УТП)" avatar={<StarIcon />} />
                 <CardContent>
                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="УТП 1" {...register('usp_1')} /></Grid>
-                        <Grid item xs={12} md={6}><TextField fullWidth label="УТП 2" {...register('usp_2')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="УТП 1" {...register('usp_1')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="УТП 2" {...register('usp_2')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
@@ -374,7 +374,7 @@ export default function BuildingDetailPage() {
         </Button>
         <Grid container spacing={2}>
             {building?.gallery_images?.map((image) => (
-                <Grid item key={image.id} xs={12} sm={6} md={4} lg={3}>
+                <Grid key={image.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <Card>
                         <CardMedia component="img" height="160" image={image.image} alt={image.caption} />
                         <CardActions>

@@ -111,7 +111,7 @@ export default function FinancesPage() {
                     Object.entries(value).filter(([_, v]) => v !== '' && v !== null)
                 );
                 setFilters(cleanedFilters);
-            }, 500);
+            }, 300);
             return () => clearTimeout(timer);
         });
         return () => subscription.unsubscribe();
@@ -138,10 +138,10 @@ export default function FinancesPage() {
             <style>
                 {`
                     .overdue-row {
-                        background-color: #ffebee !important;
+                        background-color: var(--color-error-lighter) !important;
                     }
                     .overdue-row:hover {
-                        background-color: #ffcdd2 !important;
+                        background-color: var(--color-error-light) !important;
                     }
                 `}
             </style>
@@ -159,18 +159,18 @@ export default function FinancesPage() {
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
                         <Grid container spacing={2} alignItems="center">
-                            <Grid item xs={12} sm={6} md={3}>
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Controller name="client_name" control={control} render={({ field }) => (
                                     <TextField {...field} label="Клиент" fullWidth size="small" />
                                 )} />
                             </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Controller name="deal_id" control={control} render={({ field }) => (
                                     <TextField {...field} value={field.value || ''} label="ID Сделки" type="number" fullWidth size="small" />
                                 )} />
                             </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Controller name="status" control={control} render={({ field }) => (
+                            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                <Controller name="status" control={control} defaultValue="" render={({ field }) => (
                                     <FormControl fullWidth size="small">
                                         <InputLabel>Статус</InputLabel>
                                         <Select {...field} label="Статус">
@@ -184,12 +184,12 @@ export default function FinancesPage() {
                                     </FormControl>
                                 )} />
                             </Grid>
-                            <Grid item xs={6} md={3}>
+                            <Grid size={{ xs: 6, md: 3 }}>
                                 <Controller name="due_date_after" control={control} render={({ field }) => (
                                     <TextField {...field} label="Дата к оплате (от)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
                                 )} />
                             </Grid>
-                            <Grid item xs={6} md={3}>
+                            <Grid size={{ xs: 6, md: 3 }}>
                                 <Controller name="due_date_before" control={control} render={({ field }) => (
                                    <TextField {...field} label="Дата к оплате (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
                                 )} />
